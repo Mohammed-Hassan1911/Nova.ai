@@ -25,10 +25,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       options: {
         httpOnly: true,
         sameSite: 'lax',
-        // Explicit: secure in production. Auth.js also derives this from the
-        // request protocol (and prefixes the cookie with __Secure-), but we
-        // pin it here so the intent is visible in config.
-        secure: process.env.NODE_ENV === 'production',
+        // Secure only when the app is actually served over HTTPS. On plain
+        // HTTP (e.g. `npm start` on a LAN address) a Secure cookie is
+        // silently dropped by browsers, breaking sessions for new sign-ins.
+        secure: (process.env.AUTH_URL ?? '').startsWith('https://'),
         maxAge: SESSION_MAX_AGE,
       },
     },
