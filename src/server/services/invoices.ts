@@ -172,6 +172,11 @@ export interface PaymentInput {
  * Records a payment on an invoice and flips it to PAID.
  * Runs in a single transaction: validates ownership, inserts the payment,
  * stamps paidAt, records activity + notification.
+ *
+ * Concurrency safety: the invoice row is locked (SELECT ... FOR UPDATE)
+ * before the remaining-balance check, so two concurrent payment requests
+ * for the same invoice serialize — the loser sees the committed payment
+ * (or the PAID status) and is rejected instead of overpaying.
  */
 export async function markInvoicePaid(
   workspaceId: string,
@@ -179,6 +184,23 @@ export async function markInvoicePaid(
   input: PaymentInput,
   tx: Prisma.TransactionClient = prisma,
 ): Promise<InvoiceWithItems> {
+  // The row lock below is only meaningful inside a transaction. If the
+  // caller did not provide one, open a transaction here so the function
+  // is always safe to call.
+  if (tx === prisma) {
+    return prisma.$transaction((t) => markInvoicePaid(workspaceId, invoiceId, input, t))
+  }
+
+  // Serialize concurrent payment attempts on the same invoice. Any second
+  // transaction blocks here until the first commits, then re-reads the
+  // latest payments and status below.
+  const [locked] = await tx.$queryRaw<{ id: string }[]>`
+    SELECT "id" FROM "Invoice"
+    WHERE "id" = ${invoiceId} AND "workspaceId" = ${workspaceId}
+    FOR UPDATE
+  `
+  if (!locked) throw new ApiError('NOT_FOUND', 'Invoice not found.', 404)
+
   const invoice = await tx.invoice.findFirst({
     where: { id: invoiceId, workspaceId },
     include: { items: true, payments: { orderBy: { paidAt: 'asc' } } },
