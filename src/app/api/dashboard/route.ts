@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { api, ok } from '@/lib/api'
 import { requireWorkspaceContext } from '@/lib/workspace'
 import { computeInvoiceTotals, itemsToLines } from '@/server/services/invoices'
-import { sweepOverdueInvoices } from '@/server/services/notifications'
+import { sweepIfDue } from '@/server/services/notifications'
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
@@ -12,7 +12,7 @@ function monthKey(d: Date): string {
 
 export const GET = api(async () => {
   const { workspace } = await requireWorkspaceContext()
-  await sweepOverdueInvoices()
+  await sweepIfDue()
 
   const now = new Date()
   const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))

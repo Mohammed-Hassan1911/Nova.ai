@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { envInt } from '@/lib/env'
 import type { NotificationKind, Prisma } from '@prisma/client'
 
 export async function createNotification(
@@ -75,4 +76,30 @@ export async function sweepOverdueInvoices(): Promise<number> {
     }
   })
   return overdue.length
+}
+
+/**
+ * Minimum time between two automatic overdue sweeps (per process).
+ *
+ * The sweep is a write-heavy job; this gate keeps it off the per-request
+ * hot path. The real trigger is the cron endpoint (`/api/cron/overdue`,
+ * see vercel.json); this lazy gate is a resilience fallback so behaviour is
+ * preserved on single-instance/dev deployments without a cron scheduler.
+ */
+const OVERDUE_SWEEP_INTERVAL_MS = envInt('OVERDUE_SWEEP_INTERVAL_MS', 300_000)
+
+let lastSweepAt = 0
+let sweepInFlight: Promise<number> | null = null
+
+/** Runs the overdue sweep at most once per OVERDUE_SWEEP_INTERVAL_MS. */
+export async function sweepIfDue(): Promise<number> {
+  const now = Date.now()
+  if (now - lastSweepAt < OVERDUE_SWEEP_INTERVAL_MS) return 0
+  lastSweepAt = now
+  if (!sweepInFlight) {
+    sweepInFlight = sweepOverdueInvoices().finally(() => {
+      sweepInFlight = null
+    })
+  }
+  return sweepInFlight
 }
