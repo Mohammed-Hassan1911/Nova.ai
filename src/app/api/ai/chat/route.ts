@@ -9,7 +9,7 @@ export const POST = api(async (req: Request) => {
   requireAdmin(authCtx)
   const { workspace } = authCtx
 
-  const rl = rateLimit({
+  const rl = await rateLimit({
     key: `${aiRateLimitConfig.chat.key}:${workspace.id}`,
     limit: aiRateLimitConfig.chat.limit,
     windowMs: aiRateLimitConfig.chat.windowMs,

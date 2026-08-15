@@ -7,7 +7,7 @@ import { rateLimit, ipKey } from '@/lib/rate-limit'
 import { sendEmail, emailShell } from '@/server/services/email'
 
 export const POST = api(async (req: Request) => {
-  const rl = rateLimit({ key: ipKey(req, 'forgot'), limit: 5, windowMs: 60_000 })
+  const rl = await rateLimit({ key: ipKey(req, 'forgot'), limit: 5, windowMs: 60_000 })
   if (rl.limited) {
     return NextResponse.json(
       {

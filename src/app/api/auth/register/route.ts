@@ -7,7 +7,7 @@ import { registerSchema } from '@/lib/validation/schemas'
 import { rateLimit, ipKey } from '@/lib/rate-limit'
 
 export const POST = api(async (req: Request) => {
-  const rl = rateLimit({ key: ipKey(req, 'register'), limit: 10, windowMs: 60_000 })
+  const rl = await rateLimit({ key: ipKey(req, 'register'), limit: 10, windowMs: 60_000 })
   if (rl.limited) {
     return NextResponse.json(
       {

@@ -367,3 +367,11 @@ model AIMessage {
 
   @@index([conversationId, createdAt])
 }
+
+model RateLimitBucket {
+  key       String   @id
+  count     Int
+  resetAt   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

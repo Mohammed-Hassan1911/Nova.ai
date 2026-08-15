@@ -43,7 +43,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials, request) {
         // Brute-force / CPU-cost protection: fail fast before the bcrypt
         // compare once the per-IP budget is exhausted.
-        const rl = rateLimit({
+        const rl = await rateLimit({
           key: ipKey(request, 'login'),
           limit: envInt('LOGIN_RATE_LIMIT_ATTEMPTS', 10),
           windowMs: envInt('LOGIN_RATE_LIMIT_WINDOW_MS', 60_000),

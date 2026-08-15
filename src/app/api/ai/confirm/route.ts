@@ -10,7 +10,7 @@ export const POST = api(async (req: Request) => {
   requireAdmin(authCtx)
   const { workspace } = authCtx
 
-  const rl = rateLimit({
+  const rl = await rateLimit({
     key: `${aiRateLimitConfig.confirm.key}:${workspace.id}`,
     limit: aiRateLimitConfig.confirm.limit,
     windowMs: aiRateLimitConfig.confirm.windowMs,
