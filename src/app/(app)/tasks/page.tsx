@@ -11,12 +11,24 @@ export default async function TasksPage() {
     redirect(user ? '/onboarding' : '/login')
   }
 
-  const rows = await prisma.task.findMany({
-    where: { workspaceId: ctx.workspace.id },
-    orderBy: [{ status: 'asc' }, { dueDate: 'asc' }],
-    take: 100,
-    include: { project: { select: { id: true, name: true } } },
-  })
+  const openWhere = { workspaceId: ctx.workspace.id, status: { not: 'COMPLETED' as const } }
+  const completedWhere = { workspaceId: ctx.workspace.id, status: 'COMPLETED' as const }
+  const [completedTotal, openRows, completedRows] = await Promise.all([
+    prisma.task.count({ where: completedWhere }),
+    prisma.task.findMany({
+      where: openWhere,
+      orderBy: [{ status: 'asc' }, { dueDate: 'asc' }],
+      take: 200,
+      include: { project: { select: { id: true, name: true } } },
+    }),
+    prisma.task.findMany({
+      where: completedWhere,
+      orderBy: [{ status: 'asc' }, { dueDate: 'asc' }],
+      take: 50,
+      include: { project: { select: { id: true, name: true } } },
+    }),
+  ])
+  const rows = [...openRows, ...completedRows]
 
   const tasks: Task[] = rows.map((r) => ({
     id: r.id,
@@ -31,5 +43,5 @@ export default async function TasksPage() {
     project: r.project ? { id: r.project.id, name: r.project.name } : null,
   }))
 
-  return <TasksView initialTasks={tasks} />
+  return <TasksView initialTasks={tasks} initialCompletedTotal={completedTotal} />
 }

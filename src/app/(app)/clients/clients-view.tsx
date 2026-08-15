@@ -11,11 +11,14 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { PaginationBar } from '@/components/ui/Pagination'
 import { api, queryString } from '@/lib/client'
 import { useToast } from '@/components/ui/Toast'
 import { initialsOf } from '@/lib/utils'
 import { clientStatusLabel } from '@/lib/labels'
 import type { Client } from '@/lib/types'
+
+const PER_PAGE = 50
 
 type Filter = 'All' | 'ACTIVE' | 'PROSPECT' | 'INACTIVE'
 const filters: Filter[] = ['All', 'ACTIVE', 'PROSPECT', 'INACTIVE']
@@ -33,6 +36,8 @@ export function ClientsView({
   const [filter, setFilter] = useState<Filter>('All')
   const [clients, setClients] = useState<Client[]>(initialClients)
   const [total, setTotal] = useState(initialTotal)
+  const [page, setPage] = useState(1)
+  const [pages, setPages] = useState(Math.max(1, Math.ceil(initialTotal / PER_PAGE)))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
@@ -45,6 +50,10 @@ export function ClientsView({
   }, [query])
 
   useEffect(() => {
+    setPage(1)
+  }, [debouncedQuery, filter])
+
+  useEffect(() => {
     if (!mounted.current) {
       mounted.current = true
       return
@@ -53,17 +62,19 @@ export function ClientsView({
     setLoading(true)
     setError(null)
     api
-      .get<{ clients: Client[]; pagination: { total: number } }>(
+      .get<{ clients: Client[]; pagination: { total: number; pages: number } }>(
         `/api/clients${queryString({
           q: debouncedQuery,
           status: filter === 'All' ? undefined : filter,
-          per_page: 50,
+          page,
+          per_page: PER_PAGE,
         })}`,
         { signal: controller.signal },
       )
       .then((data) => {
         setClients(data.clients)
         setTotal(data.pagination.total)
+        setPages(Math.max(1, data.pagination.pages))
       })
       .catch((err) => {
         if (err instanceof DOMException && err.name === 'AbortError') return
@@ -71,7 +82,7 @@ export function ClientsView({
       })
       .finally(() => setLoading(false))
     return () => controller.abort()
-  }, [debouncedQuery, filter, reloadKey])
+  }, [debouncedQuery, filter, page, reloadKey])
 
   const counts = useMemo(() => {
     const c: Record<Filter, number> = { All: total, ACTIVE: 0, PROSPECT: 0, INACTIVE: 0 }
@@ -259,6 +270,14 @@ export function ClientsView({
           />
         )}
       </div>
+
+      <PaginationBar
+        page={page}
+        pages={pages}
+        onPrev={() => setPage((p) => Math.max(1, p - 1))}
+        onNext={() => setPage((p) => Math.min(pages, p + 1))}
+        disabled={loading}
+      />
 
       <ClientModal open={addOpen} onClose={() => setAddOpen(false)} onCreated={onCreated} />
     </div>

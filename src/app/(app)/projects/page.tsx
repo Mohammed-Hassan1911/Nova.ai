@@ -11,15 +11,19 @@ export default async function ProjectsPage() {
     redirect(user ? '/onboarding' : '/login')
   }
 
-  const rows = await prisma.project.findMany({
-    where: { workspaceId: ctx.workspace.id },
-    orderBy: { updatedAt: 'desc' },
-    take: 50,
-    include: {
-      client: { select: { id: true, company: true } },
-      _count: { select: { tasks: true } },
-    },
-  })
+  const where = { workspaceId: ctx.workspace.id }
+  const [total, rows] = await Promise.all([
+    prisma.project.count({ where }),
+    prisma.project.findMany({
+      where,
+      orderBy: { updatedAt: 'desc' },
+      take: 50,
+      include: {
+        client: { select: { id: true, company: true } },
+        _count: { select: { tasks: true } },
+      },
+    }),
+  ])
 
   const projects: Project[] = rows.map((r) => ({
     id: r.id,
@@ -36,5 +40,5 @@ export default async function ProjectsPage() {
     _count: { tasks: r._count.tasks },
   }))
 
-  return <ProjectsView initialProjects={projects} />
+  return <ProjectsView initialProjects={projects} initialTotal={total} />
 }

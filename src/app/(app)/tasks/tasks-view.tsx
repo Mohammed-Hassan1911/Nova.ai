@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { AddTaskModal } from '@/components/modals/AddTaskModal'
-import { api } from '@/lib/client'
+import { api, queryString } from '@/lib/client'
 import { useToast } from '@/components/ui/Toast'
 import { taskPriorityLabel } from '@/lib/labels'
 import type { Task, TaskPriority } from '@/lib/types'
@@ -31,9 +31,17 @@ interface Group {
   done?: boolean
 }
 
-export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
+export function TasksView({
+  initialTasks,
+  initialCompletedTotal,
+}: {
+  initialTasks: Task[]
+  initialCompletedTotal: number
+}) {
   const { toast } = useToast()
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
+  const [completedTotal, setCompletedTotal] = useState(initialCompletedTotal)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [query, setQuery] = useState('')
   const [addOpen, setAddOpen] = useState(false)
   const [togglingId, setTogglingId] = useState<string | null>(null)
@@ -71,7 +79,6 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
   }, [tasks, query])
 
   const openCount = useMemo(() => tasks.filter((t) => t.status !== 'COMPLETED').length, [tasks])
-  const completedCount = tasks.length - openCount
 
   const toggle = useCallback(
     async (t: Task) => {
@@ -80,6 +87,7 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
       try {
         const data = await api.patch<{ task: Task }>(`/api/tasks/${t.id}`, { status: next })
         setTasks((prev) => prev.map((x) => (x.id === t.id ? { ...x, ...data.task } : x)))
+        setCompletedTotal((c) => c + (next === 'COMPLETED' ? 1 : -1))
       } catch (err) {
         toast({
           kind: 'warning',
@@ -93,6 +101,34 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
     [toast],
   )
 
+  const loadMoreCompleted = useCallback(async () => {
+    const loaded = tasks.filter((t) => t.status === 'COMPLETED').length
+    const nextPage = Math.floor(loaded / 50) + 1
+    setLoadingMore(true)
+    try {
+      const data = await api.get<{ tasks: Task[]; pagination: { total: number; pages: number } }>(
+        `/api/tasks${queryString({
+          status: 'COMPLETED',
+          page: nextPage,
+          per_page: 50,
+        })}`,
+      )
+      setTasks((prev) => {
+        const known = new Set(prev.map((t) => t.id))
+        return [...prev, ...data.tasks.filter((t) => !known.has(t.id))]
+      })
+      setCompletedTotal(data.pagination.total)
+    } catch (err) {
+      toast({
+        kind: 'warning',
+        title: 'Could not load tasks',
+        message: err instanceof Error && err.message ? err.message : 'Please try again.',
+      })
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [tasks, toast])
+
   const onCreated = useCallback((task: Task) => {
     setAddOpen(false)
     toast({ kind: 'success', title: 'Task created', message: `"${task.title}" added to your queue.` })
@@ -105,7 +141,7 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
         <div>
           <h1 className="text-[26px] font-semibold tracking-[-0.02em] text-fg lg:text-[30px]">Tasks</h1>
           <p className="mt-1 text-[13.5px] text-fg-3">
-            {openCount} open · {completedCount} completed
+            {openCount} open · {completedTotal} completed
           </p>
         </div>
         <Button onClick={() => setAddOpen(true)}>
@@ -142,6 +178,19 @@ export function TasksView({ initialTasks }: { initialTasks: Task[] }) {
               onToggle={toggle}
             />
           ))
+        )}
+        {completedTotal > tasks.filter((t) => t.status === 'COMPLETED').length && !query.trim() && (
+          <div className="mt-2 flex justify-center">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => void loadMoreCompleted()}
+              loading={loadingMore}
+              icon={<ChevronRight size={14} />}
+            >
+              Load more completed
+            </Button>
+          </div>
         )}
       </div>
 

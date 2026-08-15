@@ -15,14 +15,17 @@ export default async function AssistantPage() {
     redirect('/dashboard')
   }
 
-  const rows = await prisma.aIConversation.findMany({
-    where: { workspaceId: ctx.workspace.id },
-    orderBy: { updatedAt: 'desc' },
-    take: 50,
-    include: {
-      messages: { orderBy: { createdAt: 'asc' }, take: 100 },
-    },
-  })
+  const [total, rows] = await Promise.all([
+    prisma.aIConversation.count({ where: { workspaceId: ctx.workspace.id } }),
+    prisma.aIConversation.findMany({
+      where: { workspaceId: ctx.workspace.id },
+      orderBy: { updatedAt: 'desc' },
+      take: 50,
+      include: {
+        messages: { orderBy: { createdAt: 'asc' }, take: 100 },
+      },
+    }),
+  ])
 
   const conversations: Conversation[] = rows.map((c) => ({
     id: c.id,
@@ -38,5 +41,5 @@ export default async function AssistantPage() {
     })),
   }))
 
-  return <AssistantView initialConversations={conversations} />
+  return <AssistantView initialConversations={conversations} initialConversationTotal={total} />
 }

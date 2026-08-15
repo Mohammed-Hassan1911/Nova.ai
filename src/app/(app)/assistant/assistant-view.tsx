@@ -48,7 +48,13 @@ const quickPrompts = [
 let localId = 0
 const nextId = () => `local-${++localId}`
 
-export function AssistantView({ initialConversations }: { initialConversations: Conversation[] }) {
+export function AssistantView({
+  initialConversations,
+  initialConversationTotal,
+}: {
+  initialConversations: Conversation[]
+  initialConversationTotal: number
+}) {
   const { toast } = useToast()
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations)
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -58,13 +64,21 @@ export function AssistantView({ initialConversations }: { initialConversations: 
   const [confirming, setConfirming] = useState(false)
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [conversationPage, setConversationPage] = useState(1)
+  const [conversationTotal, setConversationTotal] = useState(initialConversationTotal)
+  const [loadingOlder, setLoadingOlder] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const refreshConversations = useCallback(
     async (selectId?: string | null) => {
       try {
-        const data = await api.get<{ conversations: Conversation[] }>('/api/ai/conversations')
+        const data = await api.get<{
+          conversations: Conversation[]
+          pagination: { total: number; pages: number }
+        }>('/api/ai/conversations')
         setConversations(data.conversations)
+        setConversationTotal(data.pagination.total)
+        setConversationPage(1)
         if (selectId) {
           const conv = data.conversations.find((c) => c.id === selectId)
           if (conv) setMessages(conv.messages)
@@ -75,6 +89,26 @@ export function AssistantView({ initialConversations }: { initialConversations: 
     },
     [],
   )
+
+  const loadOlderConversations = useCallback(async () => {
+    setLoadingOlder(true)
+    try {
+      const data = await api.get<{
+        conversations: Conversation[]
+        pagination: { total: number; pages: number }
+      }>(`/api/ai/conversations?page=${conversationPage + 1}&per_page=50`)
+      setConversations((prev) => {
+        const known = new Set(prev.map((c) => c.id))
+        return [...prev, ...data.conversations.filter((c) => !known.has(c.id))]
+      })
+      setConversationTotal(data.pagination.total)
+      setConversationPage((p) => p + 1)
+    } catch {
+      toast({ kind: 'warning', title: 'Could not load conversations', message: 'Please try again.' })
+    } finally {
+      setLoadingOlder(false)
+    }
+  }, [conversationPage, toast])
 
   useEffect(() => {
     scrollRef.current?.scrollTo({
@@ -278,6 +312,19 @@ export function AssistantView({ initialConversations }: { initialConversations: 
                     </button>
                   </div>
                 ))
+              )}
+              {conversationTotal > conversations.length && (
+                <div className="p-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    full
+                    onClick={() => void loadOlderConversations()}
+                    loading={loadingOlder}
+                  >
+                    Load older
+                  </Button>
+                </div>
               )}
             </div>
           </div>

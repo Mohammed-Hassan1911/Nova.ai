@@ -11,6 +11,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Avatar } from '@/components/ui/Avatar'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { PaginationBar } from '@/components/ui/Pagination'
 import { AddProjectModal } from '@/components/modals/AddProjectModal'
 import { api, queryString } from '@/lib/client'
 import { useToast } from '@/components/ui/Toast'
@@ -20,12 +21,22 @@ import type { Project, ProjectStatus } from '@/lib/types'
 
 const filters: (ProjectStatus | 'All')[] = ['All', 'ON_TRACK', 'AT_RISK', 'BEHIND', 'COMPLETED']
 
-export function ProjectsView({ initialProjects }: { initialProjects: Project[] }) {
+const PER_PAGE = 50
+
+export function ProjectsView({
+  initialProjects,
+  initialTotal,
+}: {
+  initialProjects: Project[]
+  initialTotal: number
+}) {
   const { toast } = useToast()
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [filter, setFilter] = useState<ProjectStatus | 'All'>('All')
   const [projects, setProjects] = useState<Project[]>(initialProjects)
+  const [page, setPage] = useState(1)
+  const [pages, setPages] = useState(Math.max(1, Math.ceil(initialTotal / PER_PAGE)))
   const [loading, setLoading] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const mounted = useRef(false)
@@ -36,6 +47,10 @@ export function ProjectsView({ initialProjects }: { initialProjects: Project[] }
   }, [query])
 
   useEffect(() => {
+    setPage(1)
+  }, [debouncedQuery, filter])
+
+  useEffect(() => {
     if (!mounted.current) {
       mounted.current = true
       return
@@ -43,22 +58,26 @@ export function ProjectsView({ initialProjects }: { initialProjects: Project[] }
     const controller = new AbortController()
     setLoading(true)
     api
-      .get<{ projects: Project[] }>(
+      .get<{ projects: Project[]; pagination: { pages: number } }>(
         `/api/projects${queryString({
           q: debouncedQuery,
           status: filter === 'All' ? undefined : filter,
-          per_page: 50,
+          page,
+          per_page: PER_PAGE,
         })}`,
         { signal: controller.signal },
       )
-      .then((data) => setProjects(data.projects))
+      .then((data) => {
+        setProjects(data.projects)
+        setPages(Math.max(1, data.pagination.pages))
+      })
       .catch((err) => {
         if (err instanceof DOMException && err.name === 'AbortError') return
         setProjects([])
       })
       .finally(() => setLoading(false))
     return () => controller.abort()
-  }, [debouncedQuery, filter])
+  }, [debouncedQuery, filter, page])
 
   const onCreated = useCallback(
     (project: Project) => {
@@ -217,6 +236,14 @@ export function ProjectsView({ initialProjects }: { initialProjects: Project[] }
           </div>
         )}
       </div>
+
+      <PaginationBar
+        page={page}
+        pages={pages}
+        onPrev={() => setPage((p) => Math.max(1, p - 1))}
+        onNext={() => setPage((p) => Math.min(pages, p + 1))}
+        disabled={loading}
+      />
 
       <AddProjectModal open={addOpen} onClose={() => setAddOpen(false)} onCreated={onCreated} />
     </div>
