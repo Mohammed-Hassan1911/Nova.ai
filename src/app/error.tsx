@@ -27,7 +27,7 @@ export default function GlobalError({
         The system hit an unexpected error
       </h1>
       <p className="mt-3 max-w-md text-[14px] leading-relaxed text-fg-3">
-        {error.message || 'An unexpected error occurred while rendering this page.'}
+        An unexpected error occurred while rendering this page. Your work is safe — please try again.
       </p>
 
       <div className="mt-8 flex items-center gap-3">
