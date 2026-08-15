@@ -1,9 +1,11 @@
 import { prisma } from '@/lib/prisma'
 import { api, ok } from '@/lib/api'
-import { requireWorkspaceContext } from '@/lib/workspace'
+import { requireAdmin, requireWorkspaceContext } from '@/lib/workspace'
 
 export const GET = api(async () => {
-  const { workspace } = await requireWorkspaceContext()
+  const authCtx = await requireWorkspaceContext()
+  requireAdmin(authCtx)
+  const { workspace } = authCtx
   const conversations = await prisma.aIConversation.findMany({
     where: { workspaceId: workspace.id },
     orderBy: { updatedAt: 'desc' },

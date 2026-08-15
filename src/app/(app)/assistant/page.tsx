@@ -11,6 +11,10 @@ export default async function AssistantPage() {
     redirect(user ? '/onboarding' : '/login')
   }
 
+  if (ctx.membership.role === 'MEMBER') {
+    redirect('/dashboard')
+  }
+
   const rows = await prisma.aIConversation.findMany({
     where: { workspaceId: ctx.workspace.id },
     orderBy: { updatedAt: 'desc' },
