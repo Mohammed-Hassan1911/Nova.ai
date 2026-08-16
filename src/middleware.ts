@@ -5,7 +5,14 @@ const authPages = ['/login', '/signup', '/forgot-password', '/reset-password']
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET })
+  const token = await getToken({
+    req,
+    secret: process.env.AUTH_SECRET,
+    // Must match the cookie config in src/lib/auth.ts: on HTTPS the session
+    // cookie is named `__Secure-authjs.session-token`, which getToken only
+    // looks for when secureCookie is true.
+    secureCookie: (process.env.AUTH_URL ?? '').startsWith('https://'),
+  })
   const isLoggedIn = Boolean(token)
 
   if (pathname.startsWith('/dashboard') && !isLoggedIn) {
