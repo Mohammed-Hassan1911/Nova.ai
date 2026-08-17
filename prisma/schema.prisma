@@ -9,8 +9,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ------------------------------- enums -----------------------------
@@ -106,6 +107,7 @@ model User {
   name          String?
   email         String              @unique
   emailVerified DateTime?
+  phone         String?
   image         String?
   passwordHash  String?
   // Bumped on password change so previously issued JWTs are invalidated.
@@ -113,6 +115,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   memberships   WorkspaceMember[]
+  verificationCodes VerificationCode[]
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
 }
@@ -154,11 +157,35 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model VerificationCode {
+  id          String   @id @default(cuid())
+  userId      String?
+  type        String   // "EMAIL" | "PHONE"
+  destination String   // email address or phone number (E.164)
+  codeHash    String   // SHA-256 hash of the 6-digit code
+  expiresAt   DateTime
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(5)
+  used        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Pending signup data — stored when no User record exists yet.
+  // Populated during registration; consumed when OTP is verified.
+  pendingName         String?
+  pendingPasswordHash String?
+  pendingMethod       String?  // "EMAIL" | "PHONE"
+
+  @@index([userId, type])
+  @@index([destination, type])
+}
+
 model Workspace {
   id                String              @id @default(cuid())
-  name              String
-  businessType      BusinessType?
-  members           WorkspaceMember[]
+  name                 String
+  businessType         BusinessType?
+  businessTypeCustom   String?
+  members              WorkspaceMember[]
   clients           Client[]
   projects          Project[]
   tasks             Task[]

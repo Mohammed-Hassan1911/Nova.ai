@@ -58,7 +58,7 @@ function translateAIError(err: unknown, action: string): never {
   throw err
 }
 
-const SYSTEM_PROMPT = `You are NOVA, the AI operating assistant inside a business management app.
+const SYSTEM_PROMPT = `You are VANTA, the AI operating assistant inside a business management app.
 You help the user run their freelance or small-business workspace: clients, projects, tasks, invoicing and payments.
 
 Rules:
@@ -140,7 +140,7 @@ export async function runAgent(input: {
       kind: 'unconfigured',
       conversationId: conversation.id,
       content:
-        'The AI assistant is not configured yet. Add a GEMINI_API_KEY or OPENAI_API_KEY to your .env to enable NOVA.',
+        'The AI assistant is not configured yet. Add a GEMINI_API_KEY or OPENAI_API_KEY to your .env to enable VANTA.',
     }
   }
 

@@ -13,7 +13,7 @@ export function invoiceCreatedEmail(ctx: InvoiceEmailCtx): { subject: string; ht
   const number = escapeHtml(ctx.number)
   const clientName = escapeHtml(ctx.clientName)
   return {
-    subject: `Invoice ${ctx.number} from NOVA`,
+    subject: `Invoice ${ctx.number} from VANTA`,
     html: emailShell({
       title: `Invoice ${number}`,
       body: `

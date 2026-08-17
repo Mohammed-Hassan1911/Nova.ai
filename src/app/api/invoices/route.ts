@@ -5,13 +5,11 @@ import { requireWorkspaceContext, requireAdmin } from '@/lib/workspace'
 import { createInvoiceSchema } from '@/lib/validation/schemas'
 import { nextInvoiceNumber, serializeInvoice } from '@/server/services/invoices'
 import { recordActivity } from '@/server/services/activity'
-import { sweepIfDue } from '@/server/services/notifications'
 import { invoiceCreatedEmail } from '@/server/services/email-templates'
 import { sendEmail } from '@/server/services/email'
 
 export const GET = api(async (req: Request) => {
   const { workspace } = await requireWorkspaceContext()
-  await sweepIfDue()
 
   const url = new URL(req.url)
   const q = url.searchParams.get('q')?.trim().toLowerCase() ?? ''

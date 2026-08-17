@@ -16,7 +16,7 @@ export interface EmailPayload {
 }
 
 const apiKey = process.env.RESEND_API_KEY
-const from = process.env.EMAIL_FROM || 'NOVA <onboarding@resend.dev>'
+const from = process.env.EMAIL_FROM || 'VANTA <onboarding@resend.dev>'
 const resend = apiKey ? new Resend(apiKey) : null
 
 export async function sendEmail(payload: EmailPayload): Promise<{ id?: string; skipped: boolean }> {
@@ -54,13 +54,13 @@ export function emailShell({ title, body }: { title: string; body: string }): st
   </head>
   <body style="margin:0;padding:0;background:#0b0b0e;color:#f4f3ef;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
     <div style="max-width:560px;margin:0 auto;padding:32px 20px;">
-      <div style="font-size:16px;font-weight:700;letter-spacing:4px;color:#c8a96b;">NOVA</div>
+      <div style="font-size:16px;font-weight:700;letter-spacing:4px;color:#8b5cf6;">VANTA</div>
       <div style="margin-top:24px;background:#141419;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:28px;">
         ${body}
       </div>
       <p style="margin-top:24px;color:#686872;font-size:12px;line-height:1.6;">
-        NOVA · AI business operating system<br/>
-        You received this because you use NOVA. If this wasn't you, you can safely ignore it.
+        VANTA · AI business operating system<br/>
+        You received this because you use VANTA. If this wasn't you, you can safely ignore it.
       </p>
     </div>
   </body>

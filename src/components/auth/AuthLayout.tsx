@@ -2,104 +2,207 @@
 
 import { motion } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
-import { NovaMark } from '@/components/ui/Logo'
+import { BrandMark } from '@/components/ui/Logo'
+import { AnimatedBackground } from '@/components/background/AnimatedBackground'
+import { AnimatedNumber } from '@/components/motion/AnimatedNumber'
+import { EASE_OUT, EASE_STANDARD } from '@/components/motion/variants'
+import { cn } from '@/lib/utils'
+
+const metrics = [
+  { value: 4.2, format: (v: number) => `$${v.toFixed(1)}M`, label: 'invoices processed' },
+  { value: 1240, format: (v: number) => `${Math.round(v).toLocaleString()}+`, label: 'businesses onboarded' },
+  { value: 99.9, format: (v: number) => `${v.toFixed(1)}%`, label: 'uptime, on us' },
+]
+
+const heroLines = [
+  <>Run your business.</>,
+  <>
+    <span className="text-gradient">Not your spreadsheets.</span>
+  </>,
+]
+
+const signupLines = [
+  <>Your entire business,</>,
+  <>
+    <span className="text-gradient">one command center.</span>
+  </>,
+]
 
 export function AuthLayout({
   children,
   headline,
   subline,
+  variant = 'login',
 }: {
   children: React.ReactNode
   headline: string
   subline: string
+  variant?: 'login' | 'signup'
 }) {
+  const centered = variant === 'signup'
+  const lines = centered ? signupLines : heroLines
+
   return (
-    <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
-      <div className="relative hidden overflow-hidden border-r border-line bg-canvas-deep lg:block">
-        <GeometricBackdrop />
+    <div className="relative min-h-screen">
+      <AnimatedBackground variant="cinematic" />
 
-        <div className="relative z-10 flex h-full flex-col justify-between p-12 xl:p-14">
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex items-center gap-3"
-          >
-            <NovaMark size={34} />
-            <span className="text-[17px] font-semibold tracking-[0.2em] text-fg">NOVA</span>
-          </motion.div>
+      {centered ? (
+        <div className="relative z-10 flex min-h-screen items-center justify-center px-5 py-14 sm:px-10">
+          <div className="w-full max-w-[430px]">
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: EASE_OUT }}
+              className="mb-10 flex justify-center"
+            >
+              <div className="flex items-center gap-2.5">
+                <BrandMark size={36} />
+                <span className="text-[18px] font-semibold tracking-[0.22em] text-fg">VANTA</span>
+              </div>
+            </motion.div>
 
-          <div className="max-w-lg pb-[10vh]">
-            <motion.p
+            <GlassPanel headline={headline} subline={subline}>
+              {children}
+            </GlassPanel>
+          </div>
+        </div>
+      ) : (
+        <div className="grid min-h-screen lg:grid-cols-[1.14fr_0.86fr]">
+          <div className="relative z-10 hidden flex-col justify-between p-12 lg:flex xl:p-14">
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: EASE_OUT }}
+              className="flex items-center gap-3"
+            >
+              <BrandMark size={34} />
+              <span className="text-[17px] font-semibold tracking-[0.22em] text-fg">VANTA</span>
+            </motion.div>
+
+            <div className="max-w-xl pb-[6vh]">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.12, duration: 0.55, ease: EASE_OUT }}
+                className="mb-7 inline-flex items-center gap-2 rounded-full border border-violet/25 bg-violet/[0.08] px-3.5 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] text-violet-bright"
+              >
+                <span className="relative flex size-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-bright opacity-60" />
+                  <span className="relative inline-flex size-1.5 rounded-full bg-violet-bright" />
+                </span>
+                <Sparkles size={11} />
+                AI Business Command Center
+              </motion.div>
+
+              <h1 className="text-[44px] font-semibold leading-[1.06] tracking-[-0.03em] text-fg xl:text-[54px]">
+                {lines.map((line, i) => (
+                  <motion.span
+                    key={i}
+                    initial={{ opacity: 0, y: 26, filter: 'blur(6px)' }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    transition={{ delay: 0.2 + i * 0.14, duration: 0.7, ease: EASE_STANDARD }}
+                    className="block"
+                  >
+                    {line}
+                  </motion.span>
+                ))}
+              </h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.55, ease: EASE_OUT }}
+                className="mt-6 max-w-md text-[15px] leading-relaxed text-fg-2"
+              >
+                One intelligent workspace for clients, projects, payments, and
+                everything in between.
+              </motion.p>
+
+              <motion.dl
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.62, duration: 0.55, ease: EASE_OUT }}
+                className="mt-12 grid grid-cols-3 gap-5 border-t border-line pt-7"
+              >
+                {metrics.map((m) => (
+                  <div key={m.label}>
+                    <dt className="order-2 mt-1 text-[11px] leading-snug text-fg-3">{m.label}</dt>
+                    <dd className="order-1 text-[22px] font-semibold tracking-[-0.02em] text-fg">
+                      <AnimatedNumber value={m.value} format={m.format} duration={1.2} />
+                    </dd>
+                  </div>
+                ))}
+              </motion.dl>
+            </div>
+
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.1, duration: 0.6 }}
-              className="mb-5 inline-flex items-center gap-2 rounded-full border border-gold/20 bg-gold/[0.06] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-gold"
+              transition={{ delay: 0.75, duration: 0.7 }}
+              className="flex items-center gap-6 text-[11.5px] text-fg-3"
             >
-              <Sparkles size={11} />
-              AI Business Command Center
-            </motion.p>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.18, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="text-balance text-[40px] font-semibold leading-[1.08] tracking-[-0.025em] text-fg xl:text-[48px]"
-            >
-              Run your business.
-              <br />
-              <span className="text-fg-3">Not your spreadsheets.</span>
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="mt-5 max-w-sm text-[15px] leading-relaxed text-fg-2"
-            >
-              One intelligent workspace for clients, projects, payments, and
-              everything in between.
-            </motion.p>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.7 }}
-            className="flex items-center gap-6 text-[11.5px] text-fg-3"
-          >
-            <span>Trusted by independent businesses</span>
-            <span className="h-3 w-px bg-line-strong" />
-            <span>Invoices, tasks &amp; AI in one place</span>
-          </motion.div>
-        </div>
-      </div>
-
-      <div className="relative flex items-center justify-center bg-canvas px-6 py-14 sm:px-10">
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full max-w-[380px]"
-        >
-          <div className="mb-9 lg:mb-11">
-            <motion.div
-              initial={{ scale: 0.94, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.4 }}
-              className="inline-flex items-center gap-2.5"
-            >
-              <NovaMark size={40} />
-              <span className="text-[19px] font-semibold tracking-[0.2em] text-fg">NOVA</span>
+              <span>Trusted by independent businesses</span>
+              <span className="h-3 w-px bg-line-strong" />
+              <span>Invoices, tasks &amp; AI in one place</span>
             </motion.div>
-            <h2 className="mt-6 text-[24px] font-semibold tracking-[-0.02em] text-fg">{headline}</h2>
-            <p className="mt-1 text-[13.5px] text-fg-3">{subline}</p>
           </div>
 
-          {children}
-        </motion.div>
-      </div>
+          <div className="relative z-10 flex items-center justify-center px-6 py-14 sm:px-10">
+            <div className="w-full max-w-[400px]">
+              <div className="mb-9 flex items-center gap-2.5 lg:hidden">
+                <BrandMark size={32} />
+                <span className="text-[17px] font-semibold tracking-[0.22em] text-fg">VANTA</span>
+              </div>
+              <GlassPanel headline={headline} subline={subline}>
+                {children}
+              </GlassPanel>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  )
+}
+
+function GlassPanel({
+  headline,
+  subline,
+  children,
+}: {
+  headline: string
+  subline: string
+  children: React.ReactNode
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30, scale: 0.96, filter: 'blur(8px)' }}
+      animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+      transition={{ duration: 0.9, ease: EASE_STANDARD, delay: 0.1 }}
+      className="relative"
+    >
+      <div className="pointer-events-none absolute -inset-px rounded-[24px] bg-gradient-to-b from-violet/20 via-transparent to-cyan/10 opacity-70" />
+      <div className="panel-hairline-accent glass-strong relative rounded-[24px] p-8 sm:p-9">
+        <div className="mb-8">
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22, duration: 0.5, ease: EASE_OUT }}
+            className="text-[26px] font-semibold tracking-[-0.02em] text-fg"
+          >
+            {headline}
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5, ease: EASE_OUT }}
+            className="mt-1.5 text-[13.5px] text-fg-3"
+          >
+            {subline}
+          </motion.p>
+        </div>
+        {children}
+      </div>
+    </motion.div>
   )
 }
 
@@ -111,57 +214,5 @@ export function GoogleIcon() {
       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
     </svg>
-  )
-}
-
-function GeometricBackdrop() {
-  return (
-    <div className="absolute inset-0">
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(1000px 600px at 20% 0%, rgba(201,168,108,0.05), transparent 60%), radial-gradient(800px 600px at 90% 90%, rgba(52,211,153,0.04), transparent 55%)',
-        }}
-      />
-      <svg
-        className="absolute inset-0 h-full w-full"
-        viewBox="0 0 640 900"
-        fill="none"
-        preserveAspectRatio="xMidYMid slice"
-        aria-hidden
-      >
-        <g stroke="rgba(255,255,255,0.07)" strokeWidth="1">
-          <path d="M0 320 L640 180" />
-          <path d="M0 560 L640 420" />
-          <path d="M0 720 L640 640" />
-          <path d="M180 0 L320 900" />
-          <path d="M470 0 L420 900" />
-        </g>
-        <g stroke="rgba(201,168,108,0.16)" strokeWidth="1">
-          <path d="M0 420 L640 300" />
-        </g>
-        <g fill="rgba(255,255,255,0.5)">
-          <circle cx="320" cy="180" r="2.5" />
-          <circle cx="420" cy="420" r="2" />
-          <circle cx="180" cy="560" r="2.5" />
-        </g>
-        <g fill="#C9A86C">
-          <circle cx="470" cy="300" r="2" />
-        </g>
-        <g fill="#34D399">
-          <circle cx="210" cy="300" r="2" />
-        </g>
-      </svg>
-      <div
-        className="dot-grid absolute inset-0 opacity-40"
-        style={{
-          maskImage: 'radial-gradient(700px 500px at 35% 25%, black, transparent 70%)',
-          WebkitMaskImage: 'radial-gradient(700px 500px at 35% 25%, black, transparent 70%)',
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-canvas-deep via-transparent to-canvas-deep/50" />
-      <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-canvas-deep/90 to-transparent" />
-    </div>
   )
 }

@@ -6,6 +6,7 @@ import { Plus, Search, Check, ChevronRight, CalendarCheck2, Circle, Loader2 } fr
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { AddTaskModal } from '@/components/modals/AddTaskModal'
 import { api, queryString } from '@/lib/client'
 import { useToast } from '@/components/ui/Toast'
@@ -14,7 +15,7 @@ import type { Task, TaskPriority } from '@/lib/types'
 
 const priorityDot: Record<TaskPriority, string> = {
   HIGH: 'bg-danger',
-  MEDIUM: 'bg-gold',
+  MEDIUM: 'bg-violet',
   LOW: 'bg-emerald',
 }
 
@@ -137,18 +138,17 @@ export function TasksView({
 
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[26px] font-semibold tracking-[-0.02em] text-fg lg:text-[30px]">Tasks</h1>
-          <p className="mt-1 text-[13.5px] text-fg-3">
-            {openCount} open · {completedTotal} completed
-          </p>
-        </div>
-        <Button onClick={() => setAddOpen(true)}>
-          <Plus size={15} strokeWidth={2.2} />
-          New task
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Execution"
+        title="Tasks"
+        subtitle={`${openCount} open · ${completedTotal} completed`}
+        actions={
+          <Button onClick={() => setAddOpen(true)}>
+            <Plus size={15} strokeWidth={2.2} />
+            New task
+          </Button>
+        }
+      />
 
       <div className="relative mt-6 max-w-xs">
         <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-3" />
@@ -156,7 +156,7 @@ export function TasksView({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search tasks…"
-          className="h-9.5 w-full rounded-[var(--radius-input)] border border-line bg-surface pl-9 pr-3 text-[13.5px] text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-gold/50 focus:shadow-[var(--shadow-focus)]"
+          className="h-9.5 w-full rounded-[var(--radius-input)] border border-line bg-surface pl-9 pr-3 text-[13.5px] text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-violet/50 focus:shadow-[var(--shadow-focus)]"
         />
       </div>
 
@@ -217,7 +217,7 @@ function TaskGroup({
         <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-fg-3">{title}</h2>
         <span className={cn('text-[11.5px]', tone === 'danger' ? 'text-danger' : 'text-fg-3')}>{subtitle}</span>
       </div>
-      <div className="overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface">
+      <div className="glass panel-hairline overflow-hidden rounded-[var(--radius-panel)]">
         {tasks.map((t, i) => {
           const busy = togglingId === t.id
           return (
@@ -234,14 +234,14 @@ function TaskGroup({
               >
                 <span
                   className={cn(
-                    'flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition-all duration-150',
+                    'flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition-all duration-[220ms] ease-out group-hover:scale-[1.06]',
                     done
-                      ? 'border-gold/40 bg-gold/15 text-gold'
-                      : 'border-line-strong text-transparent group-hover:border-gold/40 group-hover:text-gold/50',
+                      ? 'border-violet/40 bg-violet/15 text-violet'
+                      : 'border-line-strong text-transparent group-hover:border-violet/40 group-hover:text-violet/50',
                   )}
                 >
                   {busy ? (
-                    <Loader2 size={11} className="animate-spin text-gold" />
+                    <Loader2 size={11} className="animate-spin text-violet" />
                   ) : done ? (
                     <Check size={12} strokeWidth={3} />
                   ) : (
@@ -270,7 +270,7 @@ function TaskGroup({
                     <span>Due {t.dueDate ? new Date(t.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</span>
                   </div>
                 </div>
-                <ChevronRight size={14} className="shrink-0 text-fg-3 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
+                <ChevronRight size={14} className="shrink-0 text-fg-3 opacity-0 transition-[opacity,transform] duration-[220ms] ease-out group-hover:translate-x-[2px] group-hover:opacity-100" />
               </button>
             </motion.div>
           )

@@ -21,7 +21,7 @@ export function ProgressBar({
           'h-full rounded-full',
           tone === 'danger' && 'bg-danger',
           tone === 'emerald' && 'bg-emerald',
-          (!tone || tone === 'gold') && 'bg-gold/80',
+          (!tone || tone === 'gold') && 'bg-violet/80',
         )}
       />
     </div>

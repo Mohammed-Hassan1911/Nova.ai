@@ -1,11 +1,10 @@
 import { prisma } from '@/lib/prisma'
 import { api, ok } from '@/lib/api'
 import { requireWorkspaceContext } from '@/lib/workspace'
-import { sweepIfDue, unreadNotificationCount } from '@/server/services/notifications'
+import { unreadNotificationCount } from '@/server/services/notifications'
 
 export const GET = api(async (req: Request) => {
   const { workspace } = await requireWorkspaceContext()
-  await sweepIfDue()
 
   const url = new URL(req.url)
   const page = Math.max(1, Number(url.searchParams.get('page') ?? 1))

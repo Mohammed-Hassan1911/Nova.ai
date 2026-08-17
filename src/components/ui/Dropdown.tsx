@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { EASE_OUT } from '@/components/motion/variants'
 
 export function Dropdown({
   trigger,
@@ -48,13 +49,13 @@ export function Dropdown({
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.2, ease: EASE_OUT }}
             style={{ width, right: align === 'right' ? 0 : 'auto', left: align === 'left' ? 0 : 'auto' }}
             className={cn(
-              'absolute top-[calc(100%+8px)] z-50 overflow-hidden rounded-[12px] border border-line-strong bg-surface-2/95 shadow-[var(--shadow-pop)] backdrop-blur-md',
+              'absolute top-[calc(100%+8px)] z-50 overflow-hidden rounded-[14px] border border-line-strong bg-surface-2/95 shadow-[var(--shadow-pop)] backdrop-blur-md',
             )}
           >
             {children(() => setOpen(false))}

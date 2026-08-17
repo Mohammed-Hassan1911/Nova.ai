@@ -3,11 +3,9 @@ import { api, ok, parseBody } from '@/lib/api'
 import { requireWorkspaceContext, requireAdmin } from '@/lib/workspace'
 import { createClientSchema } from '@/lib/validation/schemas'
 import { recordActivity } from '@/server/services/activity'
-import { sweepIfDue } from '@/server/services/notifications'
 
 export const GET = api(async (req: Request) => {
   const { workspace } = await requireWorkspaceContext()
-  await sweepIfDue()
 
   const url = new URL(req.url)
   const q = url.searchParams.get('q')?.trim().toLowerCase() ?? ''

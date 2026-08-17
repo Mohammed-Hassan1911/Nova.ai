@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 
 const tones = [
-  'bg-gold/[0.14] text-gold',
+  'bg-violet/[0.14] text-violet',
   'bg-emerald/[0.12] text-emerald',
   'bg-info/[0.12] text-info',
   'bg-white/[0.07] text-fg-2',

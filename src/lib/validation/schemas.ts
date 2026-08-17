@@ -1,11 +1,27 @@
 import { z } from 'zod'
 
-const email = z
+/* ─────────────── shared primitives (exported) ──────────────── */
+
+export const email = z
   .string({ message: 'Email is required.' })
   .trim()
   .email('Enter a valid email address.')
   .max(255, 'Email is too long.')
   .transform((v) => v.toLowerCase())
+
+export const phone = z
+  .string()
+  .trim()
+  .max(60, 'Phone is too long.')
+  .optional()
+  .nullable()
+  .refine(
+    (v) => {
+      if (!v) return true
+      return /^\+?[\d\s\-().]{7,60}$/.test(v)
+    },
+    { message: 'Enter a valid phone number.' },
+  )
 
 const password = z
   .string({ message: 'Password is required.' })
@@ -17,7 +33,8 @@ const idParam = z.string().min(1)
 const optionalDate = z
   .string()
   .optional()
-  .refine((v) => v === undefined || v === '' || !Number.isNaN(Date.parse(v)), {
+  .nullable()
+  .refine((v) => v === undefined || v === null || v === '' || !Number.isNaN(Date.parse(v)), {
     message: 'Invalid date.',
   })
   .transform((v) => (v ? new Date(v) : null))
@@ -26,11 +43,43 @@ const date = optionalDate.refine((v): v is Date => v !== null, { message: 'A dat
 
 // ------------------------------ auth --------------------------------
 
-export const registerSchema = z.object({
-  name: z.string().trim().min(2, 'Please enter your name.').max(120, 'Name is too long.'),
-  email,
-  password,
+export const registerSchema = z
+  .object({
+    name: z.string().trim().min(2, 'Please enter your name.').max(120, 'Name is too long.'),
+    email,
+    password,
+    confirmPassword: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Passwords do not match.',
+        path: ['confirmPassword'],
+      })
+    }
+  })
+
+export const verifyCodeSchema = z.object({
+  userId: z.string().min(1),
+  type: z.enum(['EMAIL']),
+  code: z.string().length(6, 'Code must be 6 digits.').regex(/^\d+$/, 'Code must contain only numbers.'),
 })
+
+export const resendCodeSchema = z.object({
+  userId: z.string().min(1),
+  type: z.enum(['EMAIL']),
+})
+
+export const loginSchema = z
+  .object({
+    identifier: z
+      .string()
+      .trim()
+      .min(1, 'Email is required.')
+      .email('Enter a valid email address.'),
+    password: z.string().min(1, 'Password is required.'),
+  })
 
 export const forgotPasswordSchema = z.object({ email })
 
@@ -41,12 +90,21 @@ export const resetPasswordSchema = z.object({
 
 // ---------------------------- onboarding ----------------------------
 
-export const createWorkspaceSchema = z.object({
-  name: z.string().trim().min(2, 'Business name must be at least 2 characters.').max(120, 'Name is too long.'),
-  businessType: z
-    .enum(['FREELANCER', 'AGENCY', 'CONSULTANT', 'SMALL_BUSINESS', 'OTHER'])
-    .optional(),
-})
+export const createWorkspaceSchema = z
+  .object({
+    name: z.string().trim().min(2, 'Business name must be at least 2 characters.').max(120, 'Name is too long.'),
+    businessType: z.enum(['FREELANCER', 'AGENCY', 'CONSULTANT', 'SMALL_BUSINESS', 'OTHER']).optional(),
+    businessTypeCustom: z.string().trim().max(200, 'Custom type is too long.').optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.businessType === 'OTHER' && !data.businessTypeCustom) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Tell us what you do.',
+        path: ['businessTypeCustom'],
+      })
+    }
+  })
 
 // ------------------------------ clients ------------------------------
 
@@ -56,7 +114,7 @@ export const createClientSchema = z.object({
   name: z.string().trim().min(1, 'Name cannot be empty.').max(120, 'Name is too long.'),
   company: z.string().trim().min(1, 'Company cannot be empty.').max(120, 'Company is too long.'),
   email: email.optional().nullable(),
-  phone: z.string().trim().max(60, 'Phone is too long.').optional().nullable(),
+  phone,
   status: clientStatus.default('ACTIVE'),
   notes: z.string().max(4000, 'Notes are too long.').optional().nullable(),
 })

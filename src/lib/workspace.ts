@@ -2,6 +2,8 @@ import { cache } from 'react'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ApiError } from '@/lib/errors'
+import { TTLCache } from '@/lib/cache'
+import { envInt } from '@/lib/env'
 import type { MemberRole, Workspace, WorkspaceMember } from '@prisma/client'
 
 export type AuthUser = { id: string; email: string; name: string | null }
@@ -10,9 +12,14 @@ export type AuthUser = { id: string; email: string; name: string | null }
  * Returns the authenticated user or null. Never throws.
  */
 export async function getSessionUser(): Promise<AuthUser | null> {
-  const session = await auth()
-  if (!session?.user?.id || !session.user.email) return null
-  return { id: session.user.id, email: session.user.email, name: session.user.name ?? null }
+  try {
+    const session = await auth()
+    if (!session?.user?.id || !session.user.email) return null
+    return { id: session.user.id, email: session.user.email, name: session.user.name ?? null }
+  } catch (err) {
+    console.error('[workspace] auth() threw:', err)
+    return null
+  }
 }
 
 export interface WorkspaceContext {
@@ -22,26 +29,66 @@ export interface WorkspaceContext {
 }
 
 /**
+ * Module-level TTL cache for workspace context lookups.
+ *
+ * Each Prisma query to Supavisor takes ~600-1100ms. Without caching, every
+ * authenticated API request pays this cost. The TTL (30s default) limits
+ * stale data to a short window while eliminating ~600ms per request.
+ */
+const WORKSPACE_CACHE_TTL_MS = envInt('WORKSPACE_CACHE_TTL_MS', 30_000)
+const workspaceCache = new TTLCache<WorkspaceContext>(WORKSPACE_CACHE_TTL_MS)
+
+/**
+ * Slightly longer grace period used when the primary cache entry has expired
+ * but the database is temporarily unreachable.  This prevents a thundering
+ * herd of requests from all failing (and returning 401) during a brief
+ * Supavisor connection-pool hiccup.
+ */
+const STALE_GRACE_MS = 30_000
+const staleCache = new TTLCache<WorkspaceContext>(STALE_GRACE_MS)
+
+export function invalidateWorkspaceCache(userId: string) {
+  workspaceCache.delete(userId)
+  staleCache.delete(userId)
+}
+
+/**
  * Derives the authenticated user's workspace from their membership.
  *
  * The workspace is NEVER taken from the client — it is always derived
  * server-side from the session, which guarantees workspace isolation.
  *
- * Wrapped in React `cache()` so the layout and page segments share one
- * auth + membership lookup per request instead of duplicating them.
+ * Uses a module-level TTL cache so API routes (separate HTTP requests)
+ * share the auth + membership lookup within the TTL window, avoiding
+ * redundant Prisma round-trips. React's `cache()` still deduplicates
+ * within a single RSC render tree.
  */
 export const getWorkspaceContext = cache(async (): Promise<WorkspaceContext | null> => {
   const user = await getSessionUser()
   if (!user) return null
 
-  const membership = await prisma.workspaceMember.findFirst({
-    where: { userId: user.id },
-    orderBy: { createdAt: 'asc' },
-    include: { workspace: true },
-  })
-  if (!membership) return null
+  const cached = workspaceCache.get(user.id)
+  if (cached) return cached
 
-  return { user, workspace: membership.workspace, membership }
+  try {
+    const membership = await prisma.workspaceMember.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'asc' },
+      include: { workspace: true },
+    })
+    if (!membership) return null
+
+    const ctx: WorkspaceContext = { user, workspace: membership.workspace, membership }
+    workspaceCache.set(user.id, ctx)
+    // Also keep in the stale cache so we can serve stale data if the DB
+    // goes down briefly.
+    staleCache.set(user.id, ctx)
+    return ctx
+  } catch {
+    // DB temporarily unavailable — fall back to a slightly stale entry
+    // so requests don't all fail with 401 during transient pool issues.
+    return staleCache.get(user.id) ?? null
+  }
 })
 
 /**

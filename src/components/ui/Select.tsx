@@ -20,7 +20,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           <select
             ref={ref}
             className={cn(
-              'h-10 w-full appearance-none rounded-[var(--radius-input)] border border-line bg-surface px-3.5 pr-9 text-[14px] text-fg transition-all duration-150 hover:border-line-strong focus:border-gold/50 focus:shadow-[var(--shadow-focus)]',
+              'h-10 w-full appearance-none rounded-[var(--radius-input)] border border-line bg-surface-2/60 px-3.5 pr-9 text-[14px] text-fg shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)] transition-all duration-[220ms] ease-out hover:border-line-strong focus:border-violet/60 focus:bg-surface-2 focus:shadow-[var(--shadow-focus)]',
               'cursor-pointer [&>option]:bg-surface [&>option]:text-fg',
               className,
             )}

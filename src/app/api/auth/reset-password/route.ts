@@ -5,6 +5,7 @@ import { api, ok, parseBody } from '@/lib/api'
 import { ApiError } from '@/lib/errors'
 import { resetPasswordSchema } from '@/lib/validation/schemas'
 import { rateLimit, ipKey } from '@/lib/rate-limit'
+import { invalidateTokenVersionCache } from '@/lib/auth'
 
 export const POST = api(async (req: Request) => {
   const rl = await rateLimit({ key: ipKey(req, 'reset'), limit: 10, windowMs: 60_000 })
@@ -35,6 +36,7 @@ export const POST = api(async (req: Request) => {
     }),
     prisma.verificationToken.delete({ where: { token } }),
   ])
+  invalidateTokenVersionCache(record.identifier)
 
   return ok({ reset: true })
 })

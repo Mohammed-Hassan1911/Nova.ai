@@ -31,6 +31,7 @@ import { api } from '@/lib/client'
 import { useToast } from '@/components/ui/Toast'
 import { fmt, formatDate, initialsOf } from '@/lib/utils'
 import { clientStatusLabel, invoiceStatusLabel, projectStatusLabel } from '@/lib/labels'
+import { validateEmail, validatePhone } from '@/lib/validation/validate'
 import type { Client, Invoice, Project, ClientStatus } from '@/lib/types'
 
 type Tab = 'Overview' | 'Projects' | 'Invoices'
@@ -43,6 +44,7 @@ export default function ClientProfilePage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
+  const [hasLoaded, setHasLoaded] = useState(false)
   const [error, setError] = useState(false)
   const [notFound, setNotFound] = useState(false)
   const [tab, setTab] = useState<Tab>('Overview')
@@ -62,6 +64,7 @@ export default function ClientProfilePage() {
         setClient(c.client)
         setProjects(p.projects)
         setInvoices(i.invoices)
+        setHasLoaded(true)
       })
       .catch((err) => {
         if (err instanceof Error && (err as { status?: number }).status === 404) {
@@ -69,6 +72,7 @@ export default function ClientProfilePage() {
         } else {
           setError(true)
         }
+        setHasLoaded(true)
       })
       .finally(() => setLoading(false))
   }, [id])
@@ -97,7 +101,7 @@ export default function ClientProfilePage() {
     router.push('/clients')
   }, [router, toast])
 
-  if (loading) {
+  if (!hasLoaded) {
     return (
       <div>
         <Skeleton className="h-4 w-24" />
@@ -187,13 +191,13 @@ export default function ClientProfilePage() {
 
       <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 rounded-[var(--radius-card)] border border-line bg-surface px-5 py-3.5 text-[13px] text-fg-2">
         {client.email && (
-          <a href={`mailto:${client.email}`} className="flex items-center gap-2 transition-colors duration-150 hover:text-gold">
+          <a href={`mailto:${client.email}`} className="flex items-center gap-2 transition-colors duration-150 hover:text-violet">
             <Mail size={14} className="text-fg-3" />
             {client.email}
           </a>
         )}
         {client.phone && (
-          <a href={`tel:${client.phone}`} className="flex items-center gap-2 transition-colors duration-150 hover:text-gold">
+          <a href={`tel:${client.phone}`} className="flex items-center gap-2 transition-colors duration-150 hover:text-violet">
             <Phone size={14} className="text-fg-3" />
             {client.phone}
           </a>
@@ -243,7 +247,7 @@ export default function ClientProfilePage() {
             {tab === t && (
               <motion.span
                 layoutId="client-tab"
-                className="absolute inset-x-2 bottom-0 h-[2px] rounded-full bg-gold"
+                className="absolute inset-x-2 bottom-0 h-[2px] rounded-full bg-violet"
                 transition={{ type: 'spring', stiffness: 480, damping: 38 }}
               />
             )}
@@ -321,7 +325,7 @@ export default function ClientProfilePage() {
         )}
 
         {tab === 'Invoices' && (
-          <div className="overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface">
+          <div className="glass panel-hairline overflow-hidden rounded-[var(--radius-panel)]">
             {invoices.length === 0 ? (
               <p className="px-5 py-10 text-center text-[13px] text-fg-3">No invoices for this client yet.</p>
             ) : (
@@ -377,7 +381,7 @@ function SummaryCard({
         {icon}
         {label}
       </div>
-      <p className={cn('mt-1.5 text-[20px] font-semibold tabular tracking-[-0.01em]', tone === 'emerald' ? 'text-emerald' : tone === 'gold' ? 'text-gold' : 'text-fg')}>
+      <p className={cn('mt-1.5 text-[20px] font-semibold tabular tracking-[-0.01em]', tone === 'emerald' ? 'text-emerald' : tone === 'gold' ? 'text-violet' : 'text-fg')}>
         {value}
       </p>
       {sub && <p className="mt-0.5 text-[11.5px] text-fg-3">{sub}</p>}
@@ -389,7 +393,7 @@ function BillingRow({ label, value, warn }: { label: string; value: string; warn
   return (
     <div className="flex items-center justify-between text-[13.5px]">
       <span className="text-fg-3">{label}</span>
-      <span className={cn('font-medium tabular', warn ? 'text-gold' : 'text-fg')}>{value}</span>
+      <span className={cn('font-medium tabular', warn ? 'text-violet' : 'text-fg')}>{value}</span>
     </div>
   )
 }
@@ -436,7 +440,10 @@ function ClientEditModal({
     const next: Record<string, string> = {}
     if (!name.trim()) next.name = 'Name is required.'
     if (!company.trim()) next.company = 'Company is required.'
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'Enter a valid email.'
+    const emailErr = validateEmail(email)
+    if (emailErr) next.email = emailErr
+    const phoneErr = validatePhone(phone)
+    if (phoneErr) next.phone = phoneErr
     setErrors(next)
     if (Object.keys(next).length) return
 
@@ -498,7 +505,7 @@ function ClientEditModal({
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} />
-            <Input label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Input label="Phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} error={errors.phone} />
           </div>
           <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value as ClientStatus)}>
             {(Object.keys(clientStatusLabel) as ClientStatus[]).map((s) => (
@@ -511,7 +518,7 @@ function ClientEditModal({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Anything worth remembering…"
-              className="min-h-[84px] w-full resize-y rounded-[var(--radius-input)] border border-line bg-surface px-3.5 py-2.5 text-[14px] text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-gold/50 focus:shadow-[var(--shadow-focus)]"
+              className="min-h-[84px] w-full resize-y rounded-[var(--radius-input)] border border-line bg-surface px-3.5 py-2.5 text-[14px] text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-violet/50 focus:shadow-[var(--shadow-focus)]"
             />
           </label>
         </form>

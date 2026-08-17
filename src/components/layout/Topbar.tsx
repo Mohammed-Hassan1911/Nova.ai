@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { signOut } from 'next-auth/react'
-import { Bell, ChevronDown, LogOut, Settings } from 'lucide-react'
+import { Bell, LogOut, Settings, Command } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Dropdown } from '@/components/ui/Dropdown'
 import { Avatar } from '@/components/ui/Avatar'
@@ -15,9 +17,9 @@ const notificationStyles: Record<string, string> = {
   INVOICE_PAID: 'bg-emerald/15 text-emerald',
   PAYMENT_RECEIVED: 'bg-emerald/15 text-emerald',
   INVOICE_OVERDUE: 'bg-danger/15 text-danger',
-  TASK_DUE: 'bg-gold/15 text-gold',
-  PROJECT_DEADLINE: 'bg-gold/15 text-gold',
-  CLIENT_CREATED: 'bg-info/15 text-info',
+  TASK_DUE: 'bg-violet/15 text-violet-bright',
+  PROJECT_DEADLINE: 'bg-violet/15 text-violet-bright',
+  CLIENT_CREATED: 'bg-cyan/15 text-cyan',
   SYSTEM: 'bg-white/8 text-fg-2',
 }
 
@@ -31,9 +33,30 @@ const notificationIcon: Record<string, string> = {
   SYSTEM: '·',
 }
 
-export function Topbar({ userName, userEmail }: { userName: string | null; userEmail: string }) {
+const sectionLabels: [string, string][] = [
+  ['/dashboard', 'Overview'],
+  ['/clients', 'Clients'],
+  ['/projects', 'Projects'],
+  ['/tasks', 'Tasks'],
+  ['/invoices', 'Invoices'],
+  ['/assistant', 'AI Assistant'],
+  ['/settings', 'Settings'],
+]
+
+export function Topbar({
+  userName,
+  userEmail,
+  scrolled = false,
+}: {
+  userName: string | null
+  userEmail: string
+  scrolled?: boolean
+}) {
+  const pathname = usePathname()
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [unread, setUnread] = useState(0)
+
+  const section = sectionLabels.find(([p]) => pathname.startsWith(p))?.[1] ?? 'Workspace'
 
   const load = useCallback(async () => {
     try {
@@ -64,33 +87,52 @@ export function Topbar({ userName, userEmail }: { userName: string | null; userE
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line px-4 sm:px-6">
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-2 rounded-[8px] border border-line bg-surface px-3 py-1.5 text-[12.5px] text-fg-2">
-          <span className="text-[11px] text-fg-3">
-            {new Date().toLocaleDateString('en-US', {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-              year: 'numeric',
-            })}
-          </span>
-        </div>
+    <header
+      className={cn(
+        'relative z-30 flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-canvas/85 px-5 backdrop-blur-xl transition-[border-color,background-color,box-shadow] duration-[300ms] ease-out sm:px-8',
+        scrolled
+          ? 'border-line-strong bg-canvas/92 shadow-[0_12px_40px_-16px_rgba(0,0,0,0.6)]'
+          : 'border-line',
+      )}
+    >
+      <div className="flex min-w-0 items-center gap-2.5">
+        <span className="size-1.5 shrink-0 rounded-full bg-violet-bright shadow-[0_0_8px_rgba(139,92,246,0.8)]" />
+        <span className="truncate text-[13.5px] font-medium text-fg-2">{section}</span>
+        <span className="hidden text-[12px] text-fg-3 sm:block">
+          · {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        </span>
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
+        <div className="hidden items-center gap-2 rounded-[10px] border border-line bg-surface px-3 py-1.5 text-[12.5px] text-fg-3 md:flex">
+          <Command size={12} className="text-fg-3" />
+          <span>Search</span>
+        </div>
+
         <Dropdown
           width={340}
           trigger={
             <button
-              className="relative flex size-9 items-center justify-center rounded-[8px] border border-line bg-surface text-fg-2 transition-colors duration-150 hover:border-line-strong hover:text-fg"
+              className="group relative flex size-9 items-center justify-center rounded-[10px] border border-line bg-surface text-fg-2 transition-all duration-[220ms] ease-out hover:border-line-strong hover:text-fg active:scale-95"
               aria-label="Notifications"
             >
-              <Bell size={15} strokeWidth={1.9} />
+              <motion.span
+                key={unread}
+                animate={unread > 0 ? { rotate: [0, -14, 10, -6, 0] } : undefined}
+                transition={{ duration: 0.5, ease: 'easeInOut' }}
+                className="inline-flex transition-transform duration-[220ms] ease-out group-hover:-rotate-6 group-hover:scale-110"
+              >
+                <Bell size={15} strokeWidth={1.9} />
+              </motion.span>
               {unread > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full border-2 border-canvas bg-gold text-[9px] font-bold text-[#16130b]">
+                <motion.span
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 22, mass: 0.6 }}
+                  className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full border-2 border-canvas bg-violet text-[9px] font-bold text-white"
+                >
                   {unread > 9 ? '9+' : unread}
-                </span>
+                </motion.span>
               )}
             </button>
           }
@@ -101,7 +143,7 @@ export function Topbar({ userName, userEmail }: { userName: string | null; userE
                 <p className="text-[13px] font-semibold text-fg">Notifications</p>
                 <button
                   onClick={markAllRead}
-                  className="text-[12px] text-gold transition-colors hover:text-gold-bright"
+                  className="text-[12px] text-violet-bright transition-colors hover:text-violet"
                 >
                   Mark all read
                 </button>
@@ -121,7 +163,7 @@ export function Topbar({ userName, userEmail }: { userName: string | null; userE
                   >
                     <span
                       className={cn(
-                        'mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-[7px] text-[12px] font-semibold',
+                        'mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-[8px] text-[12px] font-semibold',
                         notificationStyles[n.kind] ?? 'bg-white/8 text-fg-2',
                       )}
                     >
@@ -141,7 +183,7 @@ export function Topbar({ userName, userEmail }: { userName: string | null; userE
                       </span>
                     </span>
                     {!n.readAt && (
-                      <span className="mt-1 size-1.5 shrink-0 rounded-full bg-gold" />
+                      <span className="mt-1 size-1.5 shrink-0 rounded-full bg-violet" />
                     )}
                   </Link>
                 ))}
@@ -154,7 +196,7 @@ export function Topbar({ userName, userEmail }: { userName: string | null; userE
           width={240}
           trigger={
             <button
-              className="rounded-[8px] p-1 transition-all duration-150 hover:bg-hover"
+              className="rounded-full p-0.5 transition-all duration-[220ms] ease-out ring-1 ring-transparent hover:ring-violet/50 active:scale-95"
               aria-label="Account menu"
             >
               <Avatar initials={initialsOf(userName)} size={30} />
@@ -171,7 +213,7 @@ export function Topbar({ userName, userEmail }: { userName: string | null; userE
                 <Link
                   href="/settings"
                   onClick={close}
-                  className="flex w-full items-center gap-2.5 rounded-[8px] px-2.5 py-2 text-[13px] text-fg-2 transition-colors duration-150 hover:bg-hover hover:text-fg"
+                  className="flex w-full items-center gap-2.5 rounded-[8px] px-2.5 py-2 text-[13px] text-fg-2 transition-colors duration-[220ms] ease-out hover:bg-hover hover:text-fg"
                 >
                   <Settings size={15} />
                   Settings

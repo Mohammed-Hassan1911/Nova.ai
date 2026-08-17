@@ -10,7 +10,8 @@ import {
   type ReactNode,
 } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Check, Info, Sparkles, AlertTriangle, X } from 'lucide-react'
+import { Info, Sparkles, AlertTriangle, X } from 'lucide-react'
+import { EASE_OUT } from '@/components/motion/variants'
 
 type ToastKind = 'success' | 'info' | 'ai' | 'warning'
 
@@ -27,11 +28,36 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null)
 
-const toastConfig: Record<ToastKind, { icon: ReactNode; cls: string }> = {
-  success: { icon: <Check size={14} strokeWidth={2.6} />, cls: 'bg-emerald/12 text-emerald' },
-  info: { icon: <Info size={14} strokeWidth={2} />, cls: 'bg-white/8 text-fg-2' },
-  ai: { icon: <Sparkles size={14} strokeWidth={2} />, cls: 'bg-gold/15 text-gold' },
-  warning: { icon: <AlertTriangle size={14} strokeWidth={2} />, cls: 'bg-danger/15 text-danger' },
+function SuccessCheck() {
+  return (
+    <motion.svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      initial={{ scale: 0.5, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: 'spring', stiffness: 500, damping: 24, delay: 0.08 }}
+    >
+      <motion.path
+        d="M2.5 7.2 5.7 10.4 11.5 3.6"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 0.3, ease: EASE_OUT, delay: 0.1 }}
+      />
+    </motion.svg>
+  )
+}
+
+const toastConfig: Record<ToastKind, { icon: ReactNode; cls: string; bar: string }> = {
+  success: { icon: <SuccessCheck />, cls: 'bg-emerald/15 text-emerald', bar: 'bg-emerald/60' },
+  info: { icon: <Info size={14} strokeWidth={2} />, cls: 'bg-cyan/15 text-cyan', bar: 'bg-cyan/60' },
+  ai: { icon: <Sparkles size={14} strokeWidth={2} />, cls: 'bg-violet/15 text-violet-bright', bar: 'bg-violet/60' },
+  warning: { icon: <AlertTriangle size={14} strokeWidth={2} />, cls: 'bg-danger/15 text-danger', bar: 'bg-danger/60' },
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -62,11 +88,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <motion.div
               key={t.id}
               layout
-              initial={{ opacity: 0, y: -12, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.14 } }}
-              transition={{ type: 'spring', stiffness: 460, damping: 34 }}
-              className="pointer-events-auto flex items-start gap-3 rounded-[12px] border border-line-strong bg-surface-2/95 px-3.5 py-3 shadow-[var(--shadow-pop)] backdrop-blur-md"
+              initial={{ opacity: 0, x: 24, scale: 0.97 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 16, y: -6, scale: 0.97, transition: { duration: 0.18 } }}
+              transition={{ duration: 0.35, ease: EASE_OUT }}
+              className="pointer-events-auto panel-hairline relative flex items-start gap-3 overflow-hidden rounded-[14px] border border-line-strong bg-surface-2/95 px-3.5 py-3 shadow-[var(--shadow-pop)] backdrop-blur-md"
             >
               <span
                 className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full ${toastConfig[t.kind].cls}`}
@@ -85,11 +111,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               </div>
               <button
                 onClick={() => dismiss(t.id)}
-                className="rounded-md p-1 text-fg-3 transition-colors duration-150 hover:bg-hover hover:text-fg"
+                className="rounded-md p-1 text-fg-3 transition-colors duration-[220ms] ease-out hover:bg-hover hover:text-fg"
                 aria-label="Dismiss"
               >
                 <X size={13} />
               </button>
+              <span
+                aria-hidden
+                className={`absolute bottom-0 left-0 h-[2px] w-full origin-left ${toastConfig[t.kind].bar}`}
+                style={{ animation: 'toast-progress 3.6s linear both' }}
+              />
             </motion.div>
           ))}
         </AnimatePresence>

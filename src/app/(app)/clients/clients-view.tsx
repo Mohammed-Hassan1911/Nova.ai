@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import { Plus, Search, Users, ArrowUpRight, RefreshCw, WifiOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
@@ -12,10 +13,13 @@ import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { PaginationBar } from '@/components/ui/Pagination'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { api, queryString } from '@/lib/client'
 import { useToast } from '@/components/ui/Toast'
 import { initialsOf } from '@/lib/utils'
+import { EASE_OUT } from '@/components/motion/variants'
 import { clientStatusLabel } from '@/lib/labels'
+import { validateEmail, validatePhone } from '@/lib/validation/validate'
 import type { Client } from '@/lib/types'
 
 const PER_PAGE = 50
@@ -39,6 +43,7 @@ export function ClientsView({
   const [page, setPage] = useState(1)
   const [pages, setPages] = useState(Math.max(1, Math.ceil(initialTotal / PER_PAGE)))
   const [loading, setLoading] = useState(false)
+  const [hasLoaded, setHasLoaded] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
   const [addOpen, setAddOpen] = useState(false)
@@ -75,10 +80,12 @@ export function ClientsView({
         setClients(data.clients)
         setTotal(data.pagination.total)
         setPages(Math.max(1, data.pagination.pages))
+        setHasLoaded(true)
       })
       .catch((err) => {
         if (err instanceof DOMException && err.name === 'AbortError') return
         setError(err instanceof Error && err.message ? err.message : 'Something went wrong loading your clients.')
+        setHasLoaded(true)
       })
       .finally(() => setLoading(false))
     return () => controller.abort()
@@ -102,18 +109,17 @@ export function ClientsView({
 
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[26px] font-semibold tracking-[-0.02em] text-fg lg:text-[30px]">Clients</h1>
-          <p className="mt-1 text-[13.5px] text-fg-3">
-            Manage relationships and keep every engagement organized.
-          </p>
-        </div>
-        <Button onClick={() => setAddOpen(true)}>
-          <Plus size={15} strokeWidth={2.2} />
-          Add client
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Relationships"
+        title="Clients"
+        subtitle="Manage relationships and keep every engagement organized."
+        actions={
+          <Button onClick={() => setAddOpen(true)}>
+            <Plus size={15} strokeWidth={2.2} />
+            Add client
+          </Button>
+        }
+      />
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-xs flex-1 sm:max-w-[280px]">
@@ -122,7 +128,7 @@ export function ClientsView({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search clients…"
-            className="h-9.5 w-full rounded-[var(--radius-input)] border border-line bg-surface pl-9 pr-3 text-[13.5px] text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-gold/50 focus:shadow-[var(--shadow-focus)]"
+            className="h-9.5 w-full rounded-[var(--radius-input)] border border-line bg-surface pl-9 pr-3 text-[13.5px] text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-violet/50 focus:shadow-[var(--shadow-focus)]"
           />
         </div>
         <div className="flex rounded-[8px] border border-line bg-surface-2 p-0.5">
@@ -154,7 +160,7 @@ export function ClientsView({
         </div>
       )}
 
-      <div className="mt-5 hidden overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface md:block">
+      <div className="panel-hairline mt-5 hidden overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface md:block">
         <div className="grid grid-cols-[2fr_1.2fr_0.8fr_0.9fr_0.8fr_0.6fr] items-center gap-4 border-b border-line px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-fg-3">
           <span>Name</span>
           <span>Company</span>
@@ -163,7 +169,7 @@ export function ClientsView({
           <span>Status</span>
           <span />
         </div>
-        {loading ? (
+        {!hasLoaded ? (
           <div className="space-y-1 p-2">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="flex items-center gap-4 px-3 py-3">
@@ -203,9 +209,12 @@ export function ClientsView({
         ) : (
           <div>
             {clients.map((c, i) => (
-              <a
+              <motion.a
                 key={c.id}
                 href={`/clients/${c.id}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: Math.min(i * 0.03, 0.3), ease: EASE_OUT }}
                 className="group grid w-full grid-cols-[2fr_1.2fr_0.8fr_0.9fr_0.8fr_0.6fr] items-center gap-4 border-b border-line px-5 py-3 text-left transition-colors duration-150 last:border-b-0 hover:bg-hover"
               >
                 <span className="flex items-center gap-3">
@@ -224,10 +233,10 @@ export function ClientsView({
                 <span className="flex justify-end">
                   <ArrowUpRight
                     size={14}
-                    className="text-fg-3 opacity-0 transition-opacity duration-150 group-hover:text-gold group-hover:opacity-100"
+                    className="text-fg-3 opacity-0 transition-[opacity,transform] duration-[220ms] ease-out group-hover:-translate-y-[1px] group-hover:translate-x-[1px] group-hover:text-violet group-hover:opacity-100"
                   />
                 </span>
-              </a>
+              </motion.a>
             ))}
           </div>
         )}
@@ -235,10 +244,13 @@ export function ClientsView({
 
       <div className="mt-4 space-y-3 md:hidden">
         {clients.map((c) => (
-          <a
+          <motion.a
             key={c.id}
             href={`/clients/${c.id}`}
-            className="block w-full rounded-[var(--radius-card)] border border-line bg-surface p-4 text-left transition-colors duration-150 hover:border-line-strong"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: EASE_OUT }}
+            className="glass block w-full rounded-[var(--radius-card)] p-4 text-left transition-all duration-[220ms] ease-out hover:-translate-y-[1px] hover:border-line-strong"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -260,9 +272,9 @@ export function ClientsView({
                 <p className="text-[14px] font-semibold tabular text-fg">{c._count?.invoices ?? 0}</p>
               </div>
             </div>
-          </a>
+          </motion.a>
         ))}
-        {clients.length === 0 && !loading && !error && (
+        {hasLoaded && clients.length === 0 && !error && (
           <EmptyState
             icon={Users}
             title="No clients found"
@@ -319,7 +331,10 @@ export function ClientModal({
     const next: Record<string, string> = {}
     if (!name.trim()) next.name = 'Name is required.'
     if (!company.trim()) next.company = 'Company is required.'
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'Enter a valid email.'
+    const emailErr = validateEmail(email)
+    if (emailErr) next.email = emailErr
+    const phoneErr = validatePhone(phone)
+    if (phoneErr) next.phone = phoneErr
     setErrors(next)
     if (Object.keys(next).length) return
 
@@ -370,7 +385,7 @@ export function ClientModal({
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input label="Email" type="email" placeholder="jane@acme.com" value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} />
-          <Input label="Phone" placeholder="+1 555 000 0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <Input label="Phone" type="tel" placeholder="+1 555 000 0000" value={phone} onChange={(e) => setPhone(e.target.value)} error={errors.phone} />
         </div>
         <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value as typeof status)}>
           <option value="ACTIVE">Active</option>
@@ -383,7 +398,7 @@ export function ClientModal({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Anything worth remembering…"
-            className="min-h-[84px] w-full resize-y rounded-[var(--radius-input)] border border-line bg-surface px-3.5 py-2.5 text-[14px] text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-gold/50 focus:shadow-[var(--shadow-focus)]"
+            className="min-h-[84px] w-full resize-y rounded-[var(--radius-input)] border border-line bg-surface px-3.5 py-2.5 text-[14px] text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-violet/50 focus:shadow-[var(--shadow-focus)]"
           />
         </label>
       </form>

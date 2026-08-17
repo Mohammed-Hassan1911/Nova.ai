@@ -34,11 +34,11 @@ export const POST = api(async (req: Request) => {
     const resetUrl = `${appUrl}/reset-password?token=${encodeURIComponent(token)}`
     await sendEmail({
       to: email,
-      subject: 'Reset your NOVA password',
+      subject: 'Reset your VANTA password',
       html: emailShell({
         title: 'Reset your password',
         body: `
-          <h1 style="font-size:18px;margin:0 0 12px;color:#f4f3ef;">Reset your NOVA password</h1>
+          <h1 style="font-size:18px;margin:0 0 12px;color:#f4f3ef;">Reset your VANTA password</h1>
           <p style="font-size:14px;line-height:1.7;color:#a6a6b0;margin:0 0 20px;">
             We received a request to reset your password. The link below expires in one hour.
           </p>

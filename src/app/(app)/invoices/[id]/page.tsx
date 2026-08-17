@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { DatePicker } from '@/components/ui/DatePicker'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Dropdown } from '@/components/ui/Dropdown'
@@ -62,6 +63,7 @@ export default function InvoiceDetailPage() {
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
+  const [hasLoaded, setHasLoaded] = useState(false)
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState(false)
   const [downloading, setDownloading] = useState(false)
@@ -78,8 +80,6 @@ export default function InvoiceDetailPage() {
   const load = useCallback(() => {
     if (!id) return
     setLoading(true)
-    setNotFound(false)
-    setError(false)
     Promise.all([
       api.get<{ invoice: Invoice }>(`/api/invoices/${id}`),
       api.get<{ payments: Payment[] }>(`/api/payments?invoiceId=${id}&per_page=50`),
@@ -87,10 +87,12 @@ export default function InvoiceDetailPage() {
       .then(([inv, p]) => {
         setInvoice(inv.invoice)
         setPayments(p.payments)
+        setHasLoaded(true)
       })
       .catch((err) => {
         if (err instanceof Error && (err as { status?: number }).status === 404) setNotFound(true)
         else setError(true)
+        setHasLoaded(true)
       })
       .finally(() => setLoading(false))
   }, [id])
@@ -168,7 +170,7 @@ export default function InvoiceDetailPage() {
     }
   }
 
-  if (loading) {
+  if (!hasLoaded) {
     return (
       <div>
         <Skeleton className="h-4 w-24" />
@@ -182,7 +184,7 @@ export default function InvoiceDetailPage() {
             <Skeleton className="h-9 w-28" />
           </div>
         </div>
-        <div className="mx-auto mt-6 max-w-3xl overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface">
+        <div className="glass panel-hairline mx-auto mt-6 max-w-3xl overflow-hidden rounded-[var(--radius-panel)]">
           <div className="border-b border-line px-7 py-6 sm:px-10">
             <Skeleton className="h-4 w-32" />
             <Skeleton className="mt-3 h-6 w-44" />
@@ -294,10 +296,10 @@ export default function InvoiceDetailPage() {
         </div>
       </div>
 
-      <div className="mx-auto mt-6 max-w-3xl overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface shadow-[var(--shadow-card)]">
+      <div className="glass panel-hairline mx-auto mt-6 max-w-3xl overflow-hidden rounded-[var(--radius-panel)] shadow-[var(--shadow-card)]">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-line px-7 py-6 sm:px-10">
           <div>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.22em] text-gold">NOVA · Business Suite</p>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.22em] text-violet">VANTA · Business Suite</p>
             <h1 className="mt-2 text-[22px] font-semibold tracking-[-0.02em] text-fg">{invoice.number}</h1>
             <p className="mt-1 text-[12.5px] text-fg-3">
               Issued {formatDate(invoice.issueDate)} · Due {formatDate(invoice.dueDate)}
@@ -315,7 +317,7 @@ export default function InvoiceDetailPage() {
           <div>
             <p className="text-[11.5px] font-semibold uppercase tracking-[0.1em] text-fg-3">From</p>
             <p className="mt-2 text-[13.5px] font-medium text-fg">Your workspace</p>
-            <p className="text-[12.5px] text-fg-2">Invoiced via NOVA</p>
+            <p className="text-[12.5px] text-fg-2">Invoiced via VANTA</p>
           </div>
           <div>
             <p className="text-[11.5px] font-semibold uppercase tracking-[0.1em] text-fg-3">Bill to</p>
@@ -386,7 +388,7 @@ export default function InvoiceDetailPage() {
       )}
 
       {payments.length > 0 && (
-        <div className="mx-auto mt-6 max-w-3xl overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface">
+        <div className="glass panel-hairline mx-auto mt-6 max-w-3xl overflow-hidden rounded-[var(--radius-panel)]">
           <div className="border-b border-line px-5 py-3.5">
             <h2 className="text-[13.5px] font-semibold text-fg">Payment history</h2>
           </div>
@@ -501,7 +503,7 @@ function DocRow({ label, value, strong }: { label: string; value: string; strong
   return (
     <div className="flex items-center justify-between text-[12.5px]">
       <span className="text-fg-3">{label}</span>
-      <span className={cn('tabular', strong ? 'font-semibold text-gold' : 'text-fg-2')}>{value}</span>
+      <span className={cn('tabular', strong ? 'font-semibold text-violet' : 'text-fg-2')}>{value}</span>
     </div>
   )
 }
@@ -695,11 +697,10 @@ function EditInvoiceModal({
         noValidate
         className="space-y-4"
       >
-        <Input
+        <DatePicker
           label="Due date"
-          type="date"
           value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
+          onChange={setDueDate}
           error={errors.dueDate}
         />
         <label className="block">
@@ -708,7 +709,7 @@ function EditInvoiceModal({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Payment terms, PO number…"
-            className="min-h-[84px] w-full resize-y rounded-[var(--radius-input)] border border-line bg-surface px-3.5 py-2.5 text-[14px] text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-gold/50 focus:shadow-[var(--shadow-focus)]"
+            className="min-h-[84px] w-full resize-y rounded-[var(--radius-input)] border border-line bg-surface px-3.5 py-2.5 text-[14px] text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-violet/50 focus:shadow-[var(--shadow-focus)]"
           />
         </label>
       </form>

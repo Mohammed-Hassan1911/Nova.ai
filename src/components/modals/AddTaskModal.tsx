@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
+import { DatePicker } from '@/components/ui/DatePicker'
 import { api } from '@/lib/client'
 import { useToast } from '@/components/ui/Toast'
 import { taskPriorityLabel } from '@/lib/labels'
@@ -65,7 +66,6 @@ export function AddTaskModal({
         dueDate: dueDate || null,
       })
       onCreated?.(data.task)
-      toast({ kind: 'success', title: 'Task created', message: `"${title.trim()}" added to your queue.` })
     } catch {
       toast({ kind: 'warning', title: 'Could not create task', message: 'Please try again.' })
     } finally {
@@ -121,11 +121,10 @@ export function AddTaskModal({
             ))}
           </Select>
         </div>
-        <Input
+        <DatePicker
           label="Due date"
-          type="date"
           value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
+          onChange={setDueDate}
           error={errors.dueDate}
         />
         <label className="block">
@@ -134,7 +133,7 @@ export function AddTaskModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Optional details…"
-            className="min-h-[72px] w-full resize-y rounded-[var(--radius-input)] border border-line bg-surface px-3.5 py-2.5 text-[14px] text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-gold/50 focus:shadow-[var(--shadow-focus)]"
+            className="min-h-[72px] w-full resize-y rounded-[var(--radius-input)] border border-line bg-surface px-3.5 py-2.5 text-[14px] text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-violet/50 focus:shadow-[var(--shadow-focus)]"
           />
         </label>
       </form>

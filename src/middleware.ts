@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 
-const authPages = ['/login', '/signup', '/forgot-password', '/reset-password']
+const authPages = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify']
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl

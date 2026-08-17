@@ -6,9 +6,12 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Lock, ArrowLeft, Check } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
+import { Button } from '@/components/ui/Button'
+import { Magnetic } from '@/components/ui/Magnetic'
 import { AuthLayout } from '@/components/auth/AuthLayout'
 import { useToast } from '@/components/ui/Toast'
 import { ApiClientError } from '@/lib/client'
+import { StaggerGroup } from '@/components/motion/Stagger'
 
 function ResetForm() {
   const router = useRouter()
@@ -51,7 +54,7 @@ function ResetForm() {
         <p className="text-[14px] font-medium text-fg">Password updated</p>
         <Link
           href="/login"
-          className="mt-4 inline-flex items-center gap-1.5 text-[12.5px] text-gold transition-colors hover:text-gold-bright"
+          className="mt-4 inline-flex items-center gap-1.5 text-[12.5px] text-violet-bright transition-colors hover:text-violet"
         >
           <ArrowLeft size={13} />
           Go to sign in
@@ -61,12 +64,14 @@ function ResetForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-4">
-      <Input
-        label="New password"
+    <form onSubmit={handleSubmit} noValidate>
+      <StaggerGroup className="space-y-4" stagger={0.08} delayChildren={0.32}>
+        <Input
+          label="New password"
         type="password"
         placeholder="At least 8 characters"
         autoComplete="new-password"
+        floating
         value={password}
         onChange={(e) => {
           setPassword(e.target.value)
@@ -80,6 +85,7 @@ function ResetForm() {
         type="password"
         placeholder="Repeat your password"
         autoComplete="new-password"
+        floating
         value={confirm}
         onChange={(e) => {
           setConfirm(e.target.value)
@@ -87,13 +93,12 @@ function ResetForm() {
         }}
         icon={<Lock size={15} />}
       />
-      <button
-        type="submit"
-        disabled={loading}
-        className="flex h-11 w-full items-center justify-center rounded-[10px] bg-gold text-[14px] font-medium text-[#16130b] transition-all duration-200 hover:bg-gold-bright active:scale-[0.99] disabled:pointer-events-none disabled:opacity-55"
-      >
-        {loading ? 'Updating…' : 'Update password'}
-      </button>
+      <Magnetic className="w-full">
+        <Button type="submit" size="lg" full loading={loading}>
+          {!loading && 'Update password'}
+        </Button>
+      </Magnetic>
+      </StaggerGroup>
     </form>
   )
 }

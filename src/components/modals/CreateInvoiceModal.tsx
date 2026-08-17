@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useState, type FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
 import { Plus, Trash2 } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
+import { DatePicker } from '@/components/ui/DatePicker'
 import { api } from '@/lib/client'
 import { useToast } from '@/components/ui/Toast'
 import { fmt, fmtExact, clientLabel } from '@/lib/utils'
@@ -38,7 +38,6 @@ export function CreateInvoiceModal({
   presetClientId?: string | null
   onCreated?: (invoice: Invoice) => void
 }) {
-  const router = useRouter()
   const { toast } = useToast()
   const [clients, setClients] = useState<Client[]>([])
   const [clientId, setClientId] = useState('')
@@ -127,7 +126,7 @@ export function CreateInvoiceModal({
         title: 'Invoice created',
         message: `${data.invoice.number} drafted for ${fmtExact(data.invoice.total)}.`,
       })
-      router.push(`/invoices/${data.invoice.id}`)
+      onClose()
     } catch (err) {
       toast({ kind: 'warning', title: 'Could not create invoice', message: 'Please check the details and try again.' })
     } finally {
@@ -168,18 +167,16 @@ export function CreateInvoiceModal({
               </option>
             ))}
           </Select>
-          <Input
+          <DatePicker
             label="Issue date"
-            type="date"
             value={issueDate}
-            onChange={(e) => setIssueDate(e.target.value)}
+            onChange={setIssueDate}
             error={errors.issueDate}
           />
-          <Input
+          <DatePicker
             label="Due date"
-            type="date"
             value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
+            onChange={setDueDate}
             error={errors.dueDate}
           />
         </div>
@@ -194,7 +191,7 @@ export function CreateInvoiceModal({
                     placeholder="Description"
                     value={l.description}
                     onChange={(e) => updateLine(i, { description: e.target.value })}
-                    className="h-10 w-full rounded-[var(--radius-input)] border border-line bg-surface px-3.5 text-[13.5px] text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-gold/50 focus:shadow-[var(--shadow-focus)]"
+                    className="h-10 w-full rounded-[var(--radius-input)] border border-line bg-surface px-3.5 text-[13.5px] text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-violet/50 focus:shadow-[var(--shadow-focus)]"
                   />
                 </div>
                 <div className="w-20">
@@ -204,7 +201,7 @@ export function CreateInvoiceModal({
                     min={1}
                     value={l.quantity}
                     onChange={(e) => updateLine(i, { quantity: e.target.value })}
-                    className="h-10 w-full rounded-[var(--radius-input)] border border-line bg-surface px-3 text-center text-[13.5px] tabular text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-gold/50 focus:shadow-[var(--shadow-focus)]"
+                    className="h-10 w-full rounded-[var(--radius-input)] border border-line bg-surface px-3 text-center text-[13.5px] tabular text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-violet/50 focus:shadow-[var(--shadow-focus)]"
                   />
                 </div>
                 <div className="w-24">
@@ -214,7 +211,7 @@ export function CreateInvoiceModal({
                     min={0}
                     value={l.unitPrice}
                     onChange={(e) => updateLine(i, { unitPrice: e.target.value })}
-                    className="h-10 w-full rounded-[var(--radius-input)] border border-line bg-surface px-3 text-right text-[13.5px] tabular text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-gold/50 focus:shadow-[var(--shadow-focus)]"
+                    className="h-10 w-full rounded-[var(--radius-input)] border border-line bg-surface px-3 text-right text-[13.5px] tabular text-fg placeholder:text-fg-3/70 transition-all duration-150 hover:border-line-strong focus:border-violet/50 focus:shadow-[var(--shadow-focus)]"
                   />
                 </div>
                 <button
@@ -238,7 +235,7 @@ export function CreateInvoiceModal({
           <button
             type="button"
             onClick={addLine}
-            className="mt-2.5 flex items-center gap-1.5 text-[12.5px] font-medium text-gold transition-colors duration-150 hover:text-gold-bright"
+            className="mt-2.5 flex items-center gap-1.5 text-[12.5px] font-medium text-violet transition-colors duration-150 hover:text-violet-bright"
           >
             <Plus size={13} />
             Add line item
