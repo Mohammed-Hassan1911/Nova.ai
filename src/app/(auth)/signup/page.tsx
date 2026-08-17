@@ -57,23 +57,48 @@ function SignupForm() {
     if (!validate()) return
     setLoading(true)
     try {
-      const data = await apiPost('/api/auth/register', {
+      await apiPost('/api/auth/register', {
         name: name.trim(),
         email,
         password,
         confirmPassword,
       })
 
-      // Store password in sessionStorage (not URL params) for security
-      sessionStorage.setItem(`verify_pwd_${data.userId}`, password)
-
-      // Navigate to verification page
-      const params = new URLSearchParams({
-        userId: data.userId,
-        method: data.verificationType,
-        destination: data.destination,
+      const result = await signIn('credentials', {
+        identifier: email,
+        password,
+        redirect: false,
       })
-      router.push(`/verify?${params.toString()}`)
+
+      if (result?.error) {
+        router.push('/login?message=Account+created.+Please+sign+in.')
+        return
+      }
+
+      const waitForSession = async (maxAttempts = 10, delayMs = 300): Promise<boolean> => {
+        for (let i = 0; i < maxAttempts; i++) {
+          try {
+            const controller = new AbortController()
+            const timeout = setTimeout(() => controller.abort(), 5000)
+            const res = await fetch('/api/auth/session', { signal: controller.signal })
+            clearTimeout(timeout)
+            const session = await res.json()
+            if (session?.user?.id) return true
+          } catch {}
+          if (i < maxAttempts - 1) {
+            await new Promise((r) => setTimeout(r, delayMs))
+          }
+        }
+        return false
+      }
+
+      const sessionReady = await waitForSession()
+      if (!sessionReady) {
+        router.push('/login?message=Account+created.+Please+sign+in.')
+        return
+      }
+
+      router.push('/onboarding')
     } catch (err) {
       const message =
         err instanceof ApiClientError
