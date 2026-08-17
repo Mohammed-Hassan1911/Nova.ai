@@ -4,14 +4,13 @@ import { motion } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
 import { BrandMark } from '@/components/ui/Logo'
 import { AnimatedBackground } from '@/components/background/AnimatedBackground'
-import { AnimatedNumber } from '@/components/motion/AnimatedNumber'
 import { EASE_OUT, EASE_STANDARD } from '@/components/motion/variants'
 import { cn } from '@/lib/utils'
 
 const metrics = [
-  { value: 4.2, format: (v: number) => `$${v.toFixed(1)}M`, label: 'invoices processed' },
-  { value: 1240, format: (v: number) => `${Math.round(v).toLocaleString()}+`, label: 'businesses onboarded' },
-  { value: 99.9, format: (v: number) => `${v.toFixed(1)}%`, label: 'uptime, on us' },
+  { title: 'Clients managed', subtitle: 'All in one place' },
+  { title: 'Invoices & payments', subtitle: 'Streamlined' },
+  { title: 'AI business tools', subtitle: 'Built into your workspace' },
 ]
 
 const heroLines = [
@@ -125,10 +124,10 @@ export function AuthLayout({
                 className="mt-12 grid grid-cols-3 gap-5 border-t border-line pt-7"
               >
                 {metrics.map((m) => (
-                  <div key={m.label}>
-                    <dt className="order-2 mt-1 text-[11px] leading-snug text-fg-3">{m.label}</dt>
+                  <div key={m.subtitle}>
+                    <dt className="order-2 mt-1 text-[11px] leading-snug text-fg-3">{m.subtitle}</dt>
                     <dd className="order-1 text-[22px] font-semibold tracking-[-0.02em] text-fg">
-                      <AnimatedNumber value={m.value} format={m.format} duration={1.2} />
+                      {m.title}
                     </dd>
                   </div>
                 ))}
