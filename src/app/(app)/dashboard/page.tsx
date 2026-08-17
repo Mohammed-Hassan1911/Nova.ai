@@ -127,7 +127,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="hidden items-center gap-2.5 sm:flex">
-          <Link href="/invoices/new">
+          <Link href="/invoices">
             <Button variant="secondary" size="sm">
               <FilePlus2 size={14} />
               New invoice
@@ -323,7 +323,7 @@ export default function DashboardPage() {
               projects.map((p) => (
                 <StaggerItem key={p.id}>
                   <Link
-                    href={`/projects/${p.id}`}
+                    href="/projects"
                     className="group block rounded-[12px] p-1 transition-colors duration-200 hover:bg-hover"
                   >
                     <div className="flex items-center justify-between gap-3">
