@@ -221,7 +221,7 @@ export function Topbar({
                 <button
                   onClick={() => {
                     close()
-                    signOut({ callbackUrl: '/login' })
+                    signOut({ redirect: false }).then(() => { window.location.href = '/login' })
                   }}
                   className="flex w-full items-center gap-2.5 rounded-[8px] px-2.5 py-2 text-[13px] text-danger transition-colors duration-150 hover:bg-danger/10"
                 >

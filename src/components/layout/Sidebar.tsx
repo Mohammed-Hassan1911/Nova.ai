@@ -136,7 +136,7 @@ export function Sidebar({
               </p>
             </div>
             <button
-              onClick={() => signOut({ callbackUrl: '/login' })}
+              onClick={() => signOut({ redirect: false }).then(() => { window.location.href = '/login' })}
               className="rounded-lg p-1.5 text-fg-3 transition-colors duration-150 hover:bg-hover hover:text-danger"
               aria-label="Sign out"
               title="Sign out"

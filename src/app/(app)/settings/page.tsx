@@ -93,7 +93,7 @@ export default function SettingsPage() {
               <p className="text-[13.5px] font-medium text-fg">Sign out</p>
               <p className="text-[12.5px] text-fg-3">You can sign back in at any time.</p>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/login' })}>
+            <Button variant="ghost" size="sm" onClick={() => signOut({ redirect: false }).then(() => { window.location.href = '/login' })}>
               <LogOut size={14} />
               Sign out
             </Button>

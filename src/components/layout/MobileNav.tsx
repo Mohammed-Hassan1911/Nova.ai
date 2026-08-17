@@ -125,7 +125,7 @@ export function MobileNav() {
                 className="mt-8"
               >
                 <button
-                  onClick={() => signOut({ callbackUrl: '/login' })}
+                  onClick={() => signOut({ redirect: false }).then(() => { window.location.href = '/login' })}
                   className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-danger/25 bg-danger/[0.06] px-4 py-3.5 text-[14px] font-medium text-danger transition-all duration-[220ms] ease-out active:scale-[0.98]"
                 >
                   <LogOut size={16} />
