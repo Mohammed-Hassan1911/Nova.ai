@@ -57,11 +57,8 @@ export default function SettingsPage() {
                 </span>
               </div>
               <div>
-                <p className="flex items-center gap-2 text-[14px] font-medium text-fg">
+                <p className="text-[14px] font-medium text-fg">
                   {user?.name ?? 'Your account'}
-                  <span className="rounded-full border border-violet/30 bg-violet/[0.1] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-violet-bright">
-                    Pro
-                  </span>
                 </p>
                 <p className="text-[12.5px] text-fg-3">{user?.email ?? 'Signed in with VANTA'}</p>
               </div>

@@ -11,6 +11,7 @@ import { Dropdown } from '@/components/ui/Dropdown'
 import { Avatar } from '@/components/ui/Avatar'
 import { initialsOf, timeAgo } from '@/lib/utils'
 import { api } from '@/lib/client'
+import { SearchModal } from '@/components/modals/SearchModal'
 import type { NotificationItem } from '@/lib/types'
 
 const notificationStyles: Record<string, string> = {
@@ -55,8 +56,20 @@ export function Topbar({
   const pathname = usePathname()
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [unread, setUnread] = useState(0)
+  const [searchOpen, setSearchOpen] = useState(false)
 
   const section = sectionLabels.find(([p]) => pathname.startsWith(p))?.[1] ?? 'Workspace'
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(true)
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   const load = useCallback(async () => {
     try {
@@ -104,10 +117,15 @@ export function Topbar({
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="hidden items-center gap-2 rounded-[10px] border border-line bg-surface px-3 py-1.5 text-[12.5px] text-fg-3 md:flex">
+        <button
+          onClick={() => setSearchOpen(true)}
+          className="hidden items-center gap-2 rounded-[10px] border border-line bg-surface px-3 py-1.5 text-[12.5px] text-fg-3 transition-colors duration-[220ms] ease-out hover:border-line-strong hover:text-fg-2 md:flex"
+        >
           <Command size={12} className="text-fg-3" />
           <span>Search</span>
-        </div>
+        </button>
+
+        <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
 
         <Dropdown
           width={340}

@@ -129,9 +129,6 @@ export function Sidebar({
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-medium text-fg">{userName ?? userEmail}</p>
               <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-fg-3">
-                <span className="rounded-[5px] border border-violet/30 bg-violet/[0.1] px-1.5 py-[1px] text-[9.5px] font-semibold uppercase tracking-wide text-violet-bright">
-                  Pro
-                </span>
                 <span className="truncate">{workspaceName}</span>
               </p>
             </div>
